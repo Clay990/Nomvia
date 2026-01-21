@@ -1,50 +1,84 @@
-# Welcome to your Expo app 👋
+# 🚐 Nomvia - Meet people who move.
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+> **Shipyard 2026 Hackathon Entry** | Brief: *Social App for Van-Lifers (Quin Gable)*
 
-## Get started
+## 📖 About The Project
 
-1. Install dependencies
+**Nomvia** is a social and utility app designed specifically for the nomadic community (van-lifers, digital nomads, and travelers). 
 
-   ```bash
-   npm install
-   ```
+Built in public for the **RevenueCat Shipyard 2026** contest, this app answers the brief set by **Quin Gable**: *How do we solve loneliness on the road while keeping the community safe?*
 
-2. Start the app
+Most dating and social apps are location-static. Nomvia is **location-fluid**, helping nomads find partners and friends who are moving in the same direction.
 
-   ```bash
-   npx expo start
-   ```
+## 🎯 The Core Problem
+Living in a van is freedom, but it can be isolating.
+* **Dating is hard:** You match with locals, but you leave town in 2 days.
+* **Safety is key:** The community is small and protective, especially for solo female travelers.
+* **Help is hard to find:** Finding a mechanic who understands solar setups or custom builds is a nightmare.
 
-In the output, you'll find options to open the app in a
+## 💡 The Solution: Nomvia
+We aren't just building a "Tinder for Vans." We are building a trust-based network.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### Key Features (MVP)
+* **🛡️ Trust-First Onboarding:** A strict "Community Promise" and strict verification (photo of your rig/peace sign) to keep out creeps and bots.
+* **📍 Convoy Feed:** Don't just post status updates. Post your *route*. Find others driving from Mumbai to Goa on the same dates.
+* **🔧 Builder Directory:** A marketplace to find vetted experts for electrical, solar, and carpentry help.
+* **🤝 Connect:** Filter potential dates/friends by "Travel Pace" (Tortoise vs. Hare) so you match with people who move like you do.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## 🛠️ Tech Stack
 
-## Get a fresh project
+* **Framework:** [React Native](https://reactnative.dev/) (Expo Router)
+* **Language:** TypeScript
+* **Backend:** [Appwrite](https://appwrite.io/) (Database, Storage, Auth)
+* **Monetization:** [RevenueCat](https://www.revenuecat.com/) (Subscription Management)
+* **Styling:** Custom "Black & White" Design System (Quin-Aligned)
+* **Animations:** Lottie React Native
 
-When you're ready, run:
+## 🚀 Progress & Roadmap (3-Week Sprint)
 
-```bash
-npm run reset-project
-```
+- [x] **Phase 1: The Trust Gate**
+    - [x] Lottie Animation Welcome Screen
+    - [x] Secure Authentication Flow
+    - [x] "Community Promise" Agreement Screen
+    - [x] "Verify Your Rig" (Photo Upload & UX)
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+- [ ] **Phase 2: The Core Experience (In Progress)**
+    - [ ] Tab Navigation (Convoy, Connect, Builders, Profile)
+    - [ ] "Nomads Nearby" Geo-Query Logic
+    - [ ] User Profile & Travel Stats
 
-## Learn more
+- [ ] **Phase 3: Polish & Monetize**
+    - [ ] RevenueCat Paywall Integration
+    - [ ] "Builder Directory" Data Population
+    - [ ] Final UI Polish & Submission
 
-To learn more about developing your project with Expo, look at the following resources:
+## 📦 Getting Started
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+If you want to run this project locally to see the code in action:
 
-## Join the community
+1.  **Clone the repo**
+    ```bash
+    git clone https://github.com/Clay990/Nomvia.git
+    cd Nomvia
+    ```
 
-Join our community of developers creating universal apps.
+2.  **Install dependencies**
+    ```bash
+    npm install
+    ```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+3.  **Run on Android/iOS**
+    ```bash
+    npx expo start
+    ```
+
+## 🤝 Connect & Follow the Journey
+
+I am building this entire app **in public** over 4 weeks. Follow my progress as I turn a blank screen into a functional social network!
+
+* **X (Twitter):** [@SurajMondal_Dev](https://x.com/surajmondal_dev)
+* **LinkedIn:** [suraj-mondal-245828245](https://linkedin.com/in/suraj-mondal-245828245)
+* **Hackathon:** [RevenueCat Shipyard](https://www.shipyard.fyi/)
+
+---
+*Built with ❤️ and caffeine by Suraj Mondal.*
