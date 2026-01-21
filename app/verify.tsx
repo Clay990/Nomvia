@@ -16,22 +16,19 @@ export default function VerifyScreen() {
   const router = useRouter();
   const [image, setImage] = useState<string | null>(null);
   
-  // Animation: Pulse the Camera Icon (Heartbeat style)
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    // Pulse once, then wait, then pulse again (Subtle)
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, { toValue: 1.15, duration: 600, useNativeDriver: true }),
         Animated.timing(pulseAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-        Animated.delay(1000) // Wait 1 second before next pulse
+        Animated.delay(1000) 
       ])
     ).start();
   }, []);
 
   const pickImage = async () => {
-    // Request permissions
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert("Permission needed", "We need access to your photos to verify your van.");
@@ -52,7 +49,6 @@ export default function VerifyScreen() {
 
   const handleVerify = () => {
     if (!image) {
-        // If they skip (since it's open for all), warn them they won't get the badge
         Alert.alert(
             "Skip Verification?", 
             "You can join without verifying, but you won't get the 'Verified Nomad' badge.",
@@ -64,7 +60,6 @@ export default function VerifyScreen() {
         return;
     }
     
-    // Success Case
     Alert.alert("Sent for Verification", "We will review your rig shortly. Welcome to Nomvia!", [
       { text: "Enter App", onPress: () => router.push('/(tabs)/convoy') } 
     ]);
@@ -76,12 +71,10 @@ export default function VerifyScreen() {
       <View style={styles.content}>
         <Text style={styles.title}>Verify Your Journey</Text>
         
-        {/* UPDATED TEXT: Open for all, but trust-based */}
         <Text style={styles.subtitle}>
           Nomvia is open for all, but safety comes first. Verify your account to get the <Text style={{fontWeight: '700', color: '#111'}}>Verified Nomad</Text> badge.
         </Text>
 
-        {/* UPLOAD AREA */}
         <TouchableOpacity style={styles.uploadBox} onPress={pickImage} activeOpacity={0.8}>
           {image ? (
             <Image source={{ uri: image }} style={styles.previewImage} />
@@ -107,14 +100,12 @@ export default function VerifyScreen() {
         </View>
       </View>
 
-      {/* FOOTER ACTION */}
       <View style={styles.footer}>
         <TouchableOpacity 
           style={styles.button} 
           activeOpacity={0.8}
           onPress={handleVerify}
         >
-          {/* Button Text changes based on whether they uploaded or not */}
           <Text style={styles.buttonText}>
             {image ? "Submit & Enter" : "Skip for Now"}
           </Text>
@@ -126,11 +117,10 @@ export default function VerifyScreen() {
   );
 }
 
-// --- STYLES (V3 Black & White) ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF', // Pure White
+    backgroundColor: '#FFFFFF',
     padding: 24,
     justifyContent: 'space-between',
   },
@@ -153,11 +143,11 @@ const styles = StyleSheet.create({
   uploadBox: {
     width: '100%',
     height: 250,
-    backgroundColor: '#F3F4F6', // Light Gray
+    backgroundColor: '#F3F4F6', 
     borderRadius: 20,
     borderWidth: 2,
     borderColor: '#E5E7EB',
-    borderStyle: 'dashed', // Dashed border looks like "Upload Here"
+    borderStyle: 'dashed', 
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,

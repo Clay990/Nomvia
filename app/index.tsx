@@ -46,7 +46,7 @@ export default function WelcomeScreen() {
         <TouchableOpacity 
           style={styles.button} 
           activeOpacity={0.8}
-          onPress={() => router.push('/signup')} // Goes to Sign Up
+          onPress={() => router.push('/signup')}
         >
           <Text style={styles.buttonText}>Get Started</Text>
         </TouchableOpacity>
@@ -76,18 +76,18 @@ const styles = StyleSheet.create({
   textArea: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'flex-start', // Pushes text near the animation
+    justifyContent: 'flex-start', 
   },
   title: {
     fontSize: 42,
-    fontWeight: '800', // Extra Bold
-    color: '#111111',  // Near Black
+    fontWeight: '800',
+    color: '#111111', 
     letterSpacing: -1,
     marginBottom: 8,
   },
   tagline: {
     fontSize: 18,
-    color: '#6B7280', // Cool Gray
+    color: '#6B7280',
     fontWeight: '500',
   },
   footer: {
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   button: {
-    backgroundColor: '#000000', // Jet Black
+    backgroundColor: '#000000',
     height: 56,
     borderRadius: 12,
     justifyContent: 'center',
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   buttonText: {
-    color: '#FFFFFF', // White Text
+    color: '#FFFFFF', 
     fontSize: 16,
     fontWeight: '700',
   }

@@ -73,7 +73,6 @@ export default function LoginScreen() {
               />
             </View>
 
-            {/* BLACK CTA BUTTON */}
             <TouchableOpacity 
               style={styles.primaryButton}
               activeOpacity={0.8}
@@ -84,7 +83,6 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* --- SOCIAL / FOOTER --- */}
           <View style={styles.footer}>
             <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
               <MaterialCommunityIcons name="google" size={20} color="#111" />
@@ -105,7 +103,6 @@ export default function LoginScreen() {
   );
 }
 
-// --- STYLES (Matched to Signup) ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -113,7 +110,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    justifyContent: 'center', // Vertically Center Everything
+    justifyContent: 'center', 
     paddingHorizontal: 24,
   },
   header: {
@@ -134,7 +131,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   form: {
-    gap: 16, // Slightly more gap than signup since there are fewer fields
+    gap: 16,
     marginBottom: 30,
   },
   inputContainer: {

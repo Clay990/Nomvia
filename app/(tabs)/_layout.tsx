@@ -7,17 +7,17 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false, // Hide top header (we build our own in screens)
-        tabBarActiveTintColor: "#000000", // Jet Black (Active)
-        tabBarInactiveTintColor: "#9CA3AF", // Cool Gray (Inactive)
+        headerShown: false,
+        tabBarActiveTintColor: "#000000", 
+        tabBarInactiveTintColor: "#9CA3AF", 
         tabBarStyle: {
-          height: Platform.OS === "android" ? 65 : 85, // Taller for modern look
+          height: Platform.OS === "android" ? 65 : 85, 
           paddingBottom: Platform.OS === "android" ? 10 : 30,
           paddingTop: 10,
           backgroundColor: "#FFFFFF",
           borderTopWidth: 1,
           borderTopColor: "#F3F4F6",
-          elevation: 0, // Remove shadow on Android for flat look
+          elevation: 0, 
         },
         tabBarLabelStyle: {
           fontSize: 12,
@@ -25,7 +25,6 @@ export default function TabLayout() {
         },
       }}
     >
-      {/* Tab 1: Convoy (Feed) */}
       <Tabs.Screen
         name="convoy"
         options={{
@@ -36,7 +35,6 @@ export default function TabLayout() {
         }}
       />
 
-      {/* Tab 2: Connect (Dating/Friends) */}
       <Tabs.Screen
         name="connect"
         options={{
@@ -47,7 +45,6 @@ export default function TabLayout() {
         }}
       />
 
-      {/* Tab 3: Builders (Directory) */}
       <Tabs.Screen
         name="builders"
         options={{
@@ -58,7 +55,6 @@ export default function TabLayout() {
         }}
       />
 
-      {/* Tab 4: Profile */}
       <Tabs.Screen
         name="profile"
         options={{
