@@ -1,6 +1,6 @@
-import React from "react";
-import { Tabs } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Tabs } from "expo-router";
+import React from "react";
 import { Platform } from "react-native";
 
 export default function TabLayout() {
@@ -8,29 +8,34 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: "#000000", 
-        tabBarInactiveTintColor: "#9CA3AF", 
+        tabBarActiveTintColor: "#111111",
+        tabBarInactiveTintColor: "#9CA3AF",
+        tabBarShowLabel: true,
         tabBarStyle: {
-          height: Platform.OS === "android" ? 65 : 85, 
-          paddingBottom: Platform.OS === "android" ? 10 : 30,
-          paddingTop: 10,
+          height: Platform.OS === "android" ? 70 : 90,
+          paddingBottom: Platform.OS === "android" ? 12 : 30,
+          paddingTop: 12,
           backgroundColor: "#FFFFFF",
-          borderTopWidth: 1,
-          borderTopColor: "#F3F4F6",
-          elevation: 0, 
+          borderTopWidth: 0,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.05,
+          shadowRadius: 8,
+          elevation: 10,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 10,
           fontWeight: "600",
+          marginTop: 4,
         },
       }}
     >
       <Tabs.Screen
         name="convoy"
         options={{
-          title: "Convoy",
-          tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="van-utility" size={28} color={color} />
+          title: "Home",
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialCommunityIcons name={focused ? "home" : "home-outline"} size={26} color={color} />
           ),
         }}
       />
@@ -38,9 +43,19 @@ export default function TabLayout() {
       <Tabs.Screen
         name="connect"
         options={{
-          title: "Connect",
-          tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="account-group" size={28} color={color} />
+          title: "Dating",
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialCommunityIcons name={focused ? "heart" : "heart-outline"} size={26} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="community"
+        options={{
+          title: "Tribes",
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialCommunityIcons name={focused ? "account-group" : "account-group-outline"} size={26} color={color} />
           ),
         }}
       />
@@ -49,8 +64,8 @@ export default function TabLayout() {
         name="builders"
         options={{
           title: "Builders",
-          tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="hammer-wrench" size={28} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialCommunityIcons name={focused ? "hammer-wrench" : "hammer-wrench"} size={26} color={color} />
           ),
         }}
       />
@@ -58,9 +73,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: "You",
-          tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="account-circle" size={28} color={color} />
+          title: "Profile",
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialCommunityIcons name={focused ? "account-circle" : "account-circle-outline"} size={26} color={color} />
           ),
         }}
       />
