@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
   feed: {
     padding: 16,
     gap: 16,
-    paddingBottom: 120,
+    paddingBottom: 50,
   },
   card: {
     backgroundColor: '#FFFFFF',

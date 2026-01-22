@@ -53,7 +53,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="community"
         options={{
-          title: "Tribes",
+          title: "Campfire",
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons name={focused ? "account-group" : "account-group-outline"} size={26} color={color} />
           ),
@@ -63,7 +63,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="builders"
         options={{
-          title: "Builders",
+          title: "Services",
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons name={focused ? "hammer-wrench" : "hammer-wrench"} size={26} color={color} />
           ),
