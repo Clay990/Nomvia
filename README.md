@@ -1,8 +1,8 @@
-# 🚐 Nomvia - Meet people who move.
+# Nomvia - Meet people who move.
 
 > **Shipyard 2026 Hackathon Entry** | Brief: *Social App for Van-Lifers (Quin Gable)*
 
-## 📖 About The Project
+## About The Project
 
 **Nomvia** is a social and utility app designed specifically for the nomadic community (van-lifers, digital nomads, and travelers). 
 
@@ -10,22 +10,22 @@ Built in public for the **RevenueCat Shipyard 2026** contest, this app answers t
 
 Most dating and social apps are location-static. Nomvia is **location-fluid**, helping nomads find partners and friends who are moving in the same direction.
 
-## 🎯 The Core Problem
+## The Core Problem
 Living in a van is freedom, but it can be isolating.
 * **Dating is hard:** You match with locals, but you leave town in 2 days.
 * **Safety is key:** The community is small and protective, especially for solo female travelers.
 * **Help is hard to find:** Finding a mechanic who understands solar setups or custom builds is a nightmare.
 
-## 💡 The Solution: Nomvia
+## The Solution: Nomvia
 We aren't just building a "Tinder for Vans." We are building a trust-based network.
 
 ### Key Features (MVP)
-* **🛡️ Trust-First Onboarding:** A strict "Community Promise" and strict verification (photo of your rig/peace sign) to keep out creeps and bots.
-* **📍 Convoy Feed:** Don't just post status updates. Post your *route*. Find others driving from Mumbai to Goa on the same dates.
-* **🔧 Builder Directory:** A marketplace to find vetted experts for electrical, solar, and carpentry help.
-* **🤝 Connect:** Filter potential dates/friends by "Travel Pace" (Tortoise vs. Hare) so you match with people who move like you do.
+* **Trust-First Onboarding:** A strict "Community Promise" and strict verification (photo of your rig/peace sign) to keep out creeps and bots.
+* **Convoy Feed:** Don't just post status updates. Post your *route*. Find others driving from Mumbai to Goa on the same dates.
+* **Builder Directory:** A marketplace to find vetted experts for electrical, solar, and carpentry help.
+* **Connect:** Filter potential dates/friends by "Travel Pace" (Tortoise vs. Hare) so you match with people who move like you do.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 * **Framework:** [React Native](https://reactnative.dev/) (Expo Router)
 * **Language:** TypeScript
@@ -34,7 +34,7 @@ We aren't just building a "Tinder for Vans." We are building a trust-based netwo
 * **Styling:** Custom "Black & White" Design System (Quin-Aligned)
 * **Animations:** Lottie React Native
 
-## 📦 Getting Started
+## Getting Started
 
 If you want to run this project locally to see the code in action:
 
