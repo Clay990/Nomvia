@@ -16,13 +16,13 @@ const PLANS = [
     user: "Sarah J.",
     time: "2h ago",
     verified: true,
-    avatar: "https://i.pravatar.cc/150?u=a042581f4e29026024d",
-    type: "image",
+    avatar: "https://i.pravatar.cc/150?u=a042581f4e29026704d",
+    type: "none",
     image: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=800&auto=format&fit=crop",
     tag: "VAN LIFE",
     from: "Manali",
     to: "Leh",
-    desc: "Leaving this Thursday early morning. Looking for a convoy for the high passes.",
+    desc: "Currently past Keylong and making good progress. Only 142km left to Leh—staying alert for the final passes!",
 
     isLive: true,
     totalKm: 470,
@@ -33,9 +33,9 @@ const PLANS = [
     user: "Mike & Van",
     time: "Heading out this weekend",
     verified: false,
-    avatar: "https://i.pravatar.cc/150?u=a042581f4e29026704d",
+    avatar: "https://i.pravatar.cc/150?u=a042581f4e29026024d",
     type: "map",
-    image: "https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=800&auto=format&fit=crop",
+    image: "https://www.findingtheuniverse.com/wp-content/uploads/2018/09/Causeway-coastal-route-driving-map.jpg",
     tag: "COASTAL ROUTE",
     from: "Goa",
     to: "Gokarna",
@@ -122,7 +122,7 @@ function PlanCard({ plan }: { plan: any }) {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <Text style={styles.userName}>{plan.user}</Text>
               {plan.verified && (
-                <MaterialCommunityIcons name="check-decagram" size={14} color="#3B82F6" />
+                <MaterialCommunityIcons name="check-decagram" size={15} color="#000000" />
               )}
             </View>
             <Text style={styles.timestamp}>{plan.time}</Text>
@@ -138,7 +138,7 @@ function PlanCard({ plan }: { plan: any }) {
           <View style={styles.routeHeader}>
             <Text style={styles.locationText}>{plan.from}</Text>
             {!plan.isLive ?
-              <MaterialCommunityIcons name="arrow-right" size={20} color="#9CA3AF" /> : null}
+              <MaterialCommunityIcons name="arrow-right" size={25} color="#323232" /> : null}
             {plan.to && <Text style={styles.locationText}>{plan.to}</Text>}
           </View>
           {plan.isLive && (
@@ -159,12 +159,10 @@ function PlanCard({ plan }: { plan: any }) {
         </Text>
         <View style={styles.buttonRow}>
           <TouchableOpacity style={styles.joinButton} activeOpacity={0.8}>
-            <MaterialCommunityIcons name="plus-circle-outline" size={20} color="#FFF" />
             <Text style={styles.joinButtonText}>Join</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.interestButton} activeOpacity={0.7}>
-            <MaterialCommunityIcons name="star-outline" size={20} color="#111" />
             <Text style={styles.interestButtonText}>Interested</Text>
           </TouchableOpacity>
         </View>
@@ -340,7 +338,7 @@ const styles = StyleSheet.create({
   joinButtonText: {
     color: '#FFFFFF',
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 16,
   },
   interestButton: {
     flex: 1,
@@ -357,7 +355,7 @@ const styles = StyleSheet.create({
   interestButtonText: {
     color: '#111',
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 16,
   },
   footer: {
     alignItems: 'center',
