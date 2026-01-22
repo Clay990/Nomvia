@@ -34,24 +34,6 @@ We aren't just building a "Tinder for Vans." We are building a trust-based netwo
 * **Styling:** Custom "Black & White" Design System (Quin-Aligned)
 * **Animations:** Lottie React Native
 
-## 🚀 Progress & Roadmap (3-Week Sprint)
-
-- [x] **Phase 1: The Trust Gate**
-    - [x] Lottie Animation Welcome Screen
-    - [x] Secure Authentication Flow
-    - [x] "Community Promise" Agreement Screen
-    - [x] "Verify Your Rig" (Photo Upload & UX)
-
-- [ ] **Phase 2: The Core Experience (In Progress)**
-    - [ ] Tab Navigation (Convoy, Connect, Builders, Profile)
-    - [ ] "Nomads Nearby" Geo-Query Logic
-    - [ ] User Profile & Travel Stats
-
-- [ ] **Phase 3: Polish & Monetize**
-    - [ ] RevenueCat Paywall Integration
-    - [ ] "Builder Directory" Data Population
-    - [ ] Final UI Polish & Submission
-
 ## 📦 Getting Started
 
 If you want to run this project locally to see the code in action:
