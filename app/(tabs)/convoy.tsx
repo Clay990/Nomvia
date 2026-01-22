@@ -6,10 +6,9 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
-  Dimensions
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { useRouter } from "expo-router";
 
 const PLANS = [
   {
@@ -17,13 +16,17 @@ const PLANS = [
     user: "Sarah J.",
     time: "2h ago",
     verified: true,
-    avatar: "https://i.pravatar.cc/150?u=a042581f4e29026024d", 
-    type: "image", 
-    image: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=800&auto=format&fit=crop", 
+    avatar: "https://i.pravatar.cc/150?u=a042581f4e29026024d",
+    type: "image",
+    image: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=800&auto=format&fit=crop",
     tag: "VAN LIFE",
     from: "Manali",
     to: "Leh",
-    desc: "Leaving this Thursday early morning. Looking for a convoy for the high passes. I have a 4x4 camper."
+    desc: "Leaving this Thursday early morning. Looking for a convoy for the high passes.",
+
+    isLive: true,
+    totalKm: 470,
+    completedKm: 328
   },
   {
     id: 2,
@@ -32,11 +35,12 @@ const PLANS = [
     verified: false,
     avatar: "https://i.pravatar.cc/150?u=a042581f4e29026704d",
     type: "map",
-    image: "https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=800&auto=format&fit=crop", 
+    image: "https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=800&auto=format&fit=crop",
     tag: "COASTAL ROUTE",
     from: "Goa",
     to: "Gokarna",
-    desc: "Slow travel down the coast. Looking for chill people to share bonfires with."
+    desc: "Slow travel down the coast. Looking for chill people to share bonfires with.",
+    isLive: false,
   },
   {
     id: 3,
@@ -44,15 +48,18 @@ const PLANS = [
     time: "Digital Nomad • Biker",
     verified: false,
     avatar: "https://i.pravatar.cc/150?u=a04258114e29026302d",
-    type: "none", 
+    type: "none",
     tag: "REMOTE WORK",
     from: "Co-working in Varkala",
-    to: null, 
-    desc: "Setting up base for a month. Anyone around for sunset cliffs?"
+    to: null,
+    desc: "Setting up base for a month. Anyone around for sunset cliffs?",
+    isLive: false,
   }
 ];
 
 export default function ConvoyScreen() {
+  const router = useRouter();
+
   return (
     <View style={styles.container}>
 
@@ -63,26 +70,19 @@ export default function ConvoyScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.feed}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={styles.feed} showsVerticalScrollIndicator={false}>
         {PLANS.map((plan) => (
           <PlanCard key={plan.id} plan={plan} />
         ))}
-
         <View style={styles.footer}>
           <Text style={styles.footerText}>No more nomads nearby</Text>
-          <TouchableOpacity>
-            <Text style={styles.expandText}>Expand your radius?</Text>
-          </TouchableOpacity>
         </View>
       </ScrollView>
       <View style={styles.floatingContainer}>
         <TouchableOpacity
           style={styles.mapPill}
           activeOpacity={0.9}
-          onPress={() => router.push('/map')} 
+          onPress={() => router.push('/map')}
         >
           <Text style={styles.mapPillText}>Map</Text>
           <MaterialCommunityIcons name="map-marker-multiple" size={16} color="#FFF" style={{ marginLeft: 6 }} />
@@ -93,12 +93,20 @@ export default function ConvoyScreen() {
 }
 
 function PlanCard({ plan }: { plan: any }) {
+
+  // Calculate Progress Percentage for the bar
+  const progressPercent = plan.isLive
+    ? (plan.completedKm / plan.totalKm) * 100
+    : 0;
+
+  const kmLeft = plan.isLive ? plan.totalKm - plan.completedKm : 0;
+
   return (
     <View style={styles.card}>
+
       {plan.type !== 'none' && (
         <View style={styles.mediaContainer}>
           <Image source={{ uri: plan.image }} style={styles.cardImage} />
-
           <View style={styles.tagBadge}>
             {plan.type === 'map' && <MaterialCommunityIcons name="map-marker-path" size={14} color="#FFF" style={{ marginRight: 4 }} />}
             <Text style={styles.tagText}>{plan.tag}</Text>
@@ -110,7 +118,7 @@ function PlanCard({ plan }: { plan: any }) {
 
         <View style={styles.userRow}>
           <Image source={{ uri: plan.avatar }} style={styles.avatar} />
-          <View>
+          <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <Text style={styles.userName}>{plan.user}</Text>
               {plan.verified && (
@@ -120,26 +128,29 @@ function PlanCard({ plan }: { plan: any }) {
             <Text style={styles.timestamp}>{plan.time}</Text>
           </View>
           {plan.type === 'none' && (
-            <View style={[styles.tagBadge, {
-              backgroundColor: '#F3F4F6',
-              position: 'absolute',
-              right: 0,
-              top: 0,
-              left: undefined, 
-              borderRadius: 8
-            }]}>
-              <Text style={[styles.tagText, { color: '#374151' }]}>{plan.tag}</Text>
+            <View style={[styles.tagBadge, { backgroundColor: '#F3F4F6', position: 'absolute', right: 0, top: 0, left: undefined, borderRadius: 8 }]}>
+              <Text style={[styles.tagText, { color: '#4B5563', fontSize: 11 }]}>{plan.tag}</Text>
             </View>
           )}
         </View>
 
-        <View style={styles.routeRow}>
-          <Text style={styles.locationText}>{plan.from}</Text>
-          {plan.to && (
-            <>
-              <MaterialCommunityIcons name="arrow-right" size={20} color="#9CA3AF" />
-              <Text style={styles.locationText}>{plan.to}</Text>
-            </>
+        <View style={styles.routeSection}>
+          <View style={styles.routeHeader}>
+            <Text style={styles.locationText}>{plan.from}</Text>
+            {!plan.isLive ?
+              <MaterialCommunityIcons name="arrow-right" size={20} color="#9CA3AF" /> : null}
+            {plan.to && <Text style={styles.locationText}>{plan.to}</Text>}
+          </View>
+          {plan.isLive && (
+            <View style={styles.progressBarContainer}>
+              <View style={styles.track} />
+              <View style={[styles.fill, { width: `${progressPercent}%` }]} />
+              <View style={[styles.vanIconMarker, { left: `${progressPercent}%` }]}>
+                <View style={styles.vanCircle}>
+                  <MaterialCommunityIcons name="van-utility" size={12} color="#FFF" />
+                </View>
+              </View>
+            </View>
           )}
         </View>
 
@@ -162,7 +173,6 @@ function PlanCard({ plan }: { plan: any }) {
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -192,7 +202,7 @@ const styles = StyleSheet.create({
   feed: {
     padding: 16,
     gap: 16,
-    paddingBottom: 50, 
+    paddingBottom: 120,
   },
   card: {
     backgroundColor: '#FFFFFF',
@@ -240,7 +250,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   avatar: {
     width: 40,
@@ -256,10 +266,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6B7280',
   },
-  routeRow: {
+  routeSection: {
+    marginBottom: 16,
+  },
+  routeHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 8,
     marginBottom: 8,
   },
   locationText: {
@@ -267,6 +280,43 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#111',
   },
+  progressBarContainer: {
+    height: 20,
+    width: '100%',
+    borderRadius: 10,
+    overflow: 'hidden',
+    justifyContent: 'center',
+  },
+  track: {
+    height: 4,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 2,
+    width: '100%',
+    position: 'absolute',
+  },
+  fill: {
+    height: 4,
+    backgroundColor: '#111', 
+    borderRadius: 2,
+    position: 'absolute',
+    left: 0,
+  },
+  vanIconMarker: {
+    position: 'absolute',
+    marginLeft: -10,
+    top: -1, 
+  },
+  vanCircle: {
+    width: 20,
+    height: 20,
+    backgroundColor: '#111',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFF',
+  },
+
   description: {
     fontSize: 15,
     color: '#4B5563',
@@ -313,16 +363,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 20,
     gap: 8,
-    marginBottom: 20, 
+    marginBottom: 20,
   },
   footerText: {
     color: '#9CA3AF',
     fontSize: 14,
-  },
-  expandText: {
-    color: '#111',
-    fontWeight: '700',
-    textDecorationLine: 'underline',
   },
   floatingContainer: {
     position: 'absolute',
