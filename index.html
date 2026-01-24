@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nomvia | The OS for Modern Nomads</title>
+    <meta name="description" content="Safety, Community, and Utility for Vanlife. Join live convoys and find verified help on the road.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-color: #050505;
+            --surface-color: #121212;
+            --border-color: #2A2A2A;
+            --text-primary: #FFFFFF;
+            --text-secondary: #A1A1A1;
+            --accent-blue: #3B82F6;
+            --accent-orange: #F59E0B;
+            --accent-red: #EF4444;
+            --glass: rgba(255, 255, 255, 0.03);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* --- UTILITIES --- */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px 32px;
+            border-radius: 50px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            cursor: pointer;
+            border: none;
+            white-space: nowrap; /* Prevents text wrapping */
+        }
+
+        .btn-primary {
+            background-color: var(--text-primary);
+            color: var(--bg-color);
+        }
+
+        .btn-accent {
+            background-color: var(--accent-blue);
+            color: white;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--text-primary);
+            box-shadow: none;
+        }
+
+        .badge {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--accent-blue);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        /* --- FORM STYLES --- */
+        .waitlist-form-container {
+            margin-top: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px; /* Increased gap to prevent overlap */
+            width: 100%;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            background: var(--surface-color);
+            padding: 6px;
+            border-radius: 50px;
+            border: 1px solid var(--border-color);
+            width: 100%;
+            max-width: 450px;
+            position: relative;
+            z-index: 50; /* Ensures it stays on top */
+        }
+
+        .input-field {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 0 20px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            outline: none;
+            min-height: 48px; /* Touch target size */
+        }
+
+        .button-group {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+            position: relative;
+            z-index: 40;
+            margin-top: 10px; /* Extra breathing room */
+        }
+
+
+        /* --- HERO SECTION --- */
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: radial-gradient(circle at 50% 10%, #1a1a1a 0%, #050505 60%);
+            padding-bottom: 200px; /* Increased space for phone */
+            padding-top: 80px;
+        }
+
+        .road-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 2px;
+            background: linear-gradient(to bottom, transparent, var(--accent-blue), transparent);
+            opacity: 0.2;
+            transform: translateX(-50%);
+            z-index: 0;
+        }
+
+        .hero-content {
+            z-index: 10;
+            max-width: 800px;
+            animation: fadeIn 1s ease-out;
+            width: 100%;
+        }
+
+        .hero h1 {
+            font-size: 4.5rem;
+            font-weight: 800;
+            letter-spacing: -2px;
+            margin-bottom: 24px;
+            line-height: 1.1;
+            background: linear-gradient(to right, #fff, #888);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* --- APP PREVIEW (Floating Phone) --- */
+        .app-preview-container {
+            margin-top: -150px; /* Reduced negative margin to stop overlap */
+            text-align: center;
+            perspective: 1000px;
+            padding-bottom: 100px;
+            z-index: 20;
+            position: relative;
+        }
+
+        .phone-mockup {
+            width: 320px;
+            height: 650px;
+            background: #000;
+            border-radius: 45px;
+            border: 8px solid #222;
+            margin: 0 auto;
+            position: relative;
+            box-shadow: 0 20px 80px rgba(0,0,0,0.8);
+            transform: rotateX(10deg) rotateY(-10deg);
+            transition: transform 0.5s ease;
+            overflow: hidden;
+        }
+
+        .phone-mockup:hover {
+            transform: rotateX(0deg) rotateY(0deg);
+        }
+
+        .screen-content {
+            width: 100%;
+            height: 100%;
+            background: #0f0f0f;
+            overflow: hidden; /* Ensures image doesn't bleed out */
+        }
+
+        .screen-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Cover fills the space nicely */
+            border-radius: 36px;
+            display: block;
+        }
+
+        /* --- FEATURES GRID --- */
+        .features {
+            padding: 50px 0 100px 0;
+            background: var(--surface-color);
+            position: relative;
+            z-index: 30; /* Above the road line */
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            margin-bottom: 16px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+        }
+
+        .card {
+            background: var(--glass);
+            border: 1px solid var(--border-color);
+            padding: 40px;
+            border-radius: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: var(--text-primary);
+            background: rgba(255,255,255,0.05);
+        }
+
+        .icon-box {
+            width: 50px;
+            height: 50px;
+            background: #222;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            font-size: 1.2rem;
+        }
+
+        .card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 12px;
+        }
+
+        .card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* --- FOOTER --- */
+        footer {
+            padding: 60px 0;
+            background-color: var(--surface-color);
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        footer a {
+            color: var(--text-primary);
+            text-decoration: none;
+            margin: 0 10px;
+            transition: color 0.2s;
+        }
+
+        footer a:hover {
+            color: var(--accent-blue);
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 3rem; }
+            .input-group { flex-direction: column; padding: 16px; border-radius: 24px; }
+            .input-field { margin-bottom: 16px; text-align: center; width: 100%;}
+            .btn { width: 100%; }
+            .button-group { flex-direction: column; gap: 12px; width: 100%; max-width: 450px;}
+            .phone-mockup { height: 550px; width: 280px; margin-top: 40px; transform: none;}
+            .app-preview-container { margin-top: -100px; padding-bottom: 50px;}
+            .waitlist-form-container { padding: 0 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <section class="hero">
+        <div class="road-line"></div>
+        <div class="container hero-content">
+            <span class="badge">SHIPYARD 2026 ENTRY</span>
+            <h1>The Operating System<br>for Modern Nomads.</h1>
+            <p>Safety, Community, and Utility. Join live convoys, find verified help on the road, and travel with confidence.</p>
+
+            <div class="waitlist-form-container">
+
+                <form action="https://formspree.io/f/xkojprpd" method="POST" class="input-group">
+                    <input type="email" name="email" placeholder="Enter email for updates..." class="input-field" required>
+                    <button type="submit" class="btn btn-primary">
+                        Join Waitlist
+                    </button>
+                </form>
+
+                <div class="button-group">
+                    <a href="https://github.com/Clay990/Nomvia/releases" class="btn btn-accent">
+                        <i class="fa-brands fa-android" style="margin-right: 8px; font-size: 1.2rem;"></i> Download Beta APK
+                    </a>
+                    <a href="https://github.com/Clay990/Nomvia" target="_blank" class="btn btn-secondary">
+                        <i class="fa-brands fa-github" style="margin-right: 8px; font-size: 1.2rem;"></i> View Code
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <div class="container app-preview-container">
+        <div class="phone-mockup">
+            <div class="screen-content">
+                <img src="https://github.com/Clay990/Nomvia/blob/main/assets/images/WhatsApp%20Image%202026-01-22%20at%2011.07.21%20AM.jpeg?raw=true"
+                     alt="Nomvia App Screenshot"
+                     class="screen-image">
+            </div>
+        </div>
+        <p style="margin-top: 32px; font-size: 0.9rem; color: var(--text-secondary); opacity: 0.8;">
+            <i class="fa-solid fa-circle-info" style="margin-right: 8px;"></i> Actual UI from the current Alpha build.
+        </p>
+    </div>
+
+    <section class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2>Built for the Road</h2>
+                <p style="color: var(--text-secondary);">Three pillars of the nomadic experience.</p>
+            </div>
+
+            <div class="grid">
+                <div class="card">
+                    <div class="icon-box" style="color: var(--accent-blue);">
+                        <i class="fa-solid fa-route"></i>
+                    </div>
+                    <h3>Live Convoys</h3>
+                    <p>Don't drive alone. See who is heading your way in real-time. Join a pack for safety and shared experiences.</p>
+                </div>
+
+                <div class="card">
+                    <div class="icon-box" style="color: var(--accent-orange);">
+                        <i class="fa-solid fa-wrench"></i>
+                    </div>
+                    <h3>Service Hub</h3>
+                    <p>Breakdown anxiety is real. Find verified mechanics, solar pros, and parts swaps instantly. Includes an SOS beacon.</p>
+                </div>
+
+                <div class="card">
+                    <div class="icon-box" style="color: white;">
+                        <i class="fa-solid fa-passport"></i>
+                    </div>
+                    <h3>Verified Trust</h3>
+                    <p>Our "Digital Passport" system ensures you know who you are meeting. Powered by RevenueCat for secure verification.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <h3 style="margin-bottom: 16px; color: white;">Nomvia</h3>
+            <p style="margin-bottom: 24px;">Built with ❤️ and ☕ by Suraj Mondal.</p>
+            <div>
+                <a href="https://x.com/SurajMondal_Dev" target="_blank"><i class="fa-brands fa-x-twitter"></i> Twitter</a>
+                <a href="https://github.com/Clay990/Nomvia" target="_blank"><i class="fa-brands fa-github"></i> GitHub</a>
+            </div>
+            <p style="margin-top: 40px; font-size: 0.8rem; opacity: 0.5;">© 2026 Nomvia. All rights reserved.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
