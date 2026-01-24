@@ -9,10 +9,13 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
-  Alert
+  Alert,
+  ActivityIndicator
 } from "react-native";
 import { useRouter } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { ID } from "react-native-appwrite";
+import { account } from "./_appwrite";
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -21,8 +24,11 @@ export default function SignupScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const handleSignup = () => {
+  const handleSignup = async () => {
+    setErrorMsg("");
     if (!name || !email || !password || !confirmPassword) {
       Alert.alert("Missing Fields", "Please fill in all fields.");
       return;
@@ -31,7 +37,32 @@ export default function SignupScreen() {
       Alert.alert("Password Error", "Passwords do not match.");
       return;
     }
-    router.push('/promise');
+
+    setIsSubmitting(true);
+    try {
+      const user = await account.create(ID.unique(), email, password, name);
+      
+      await account.createEmailToken(ID.unique(), email);
+
+      router.push({
+        pathname: '/verify',
+        params: { userId: user.$id, email: email }
+      });
+    } catch (error: any) {
+      console.error(error);
+      if (error.code === 409) {
+        setErrorMsg("An account with this email already exists.");
+      } else {
+        Alert.alert("Signup Failed", error.message || "An error occurred. Please try again.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleTextChange = (setter: (val: string) => void, value: string) => {
+    setter(value);
+    if (errorMsg) setErrorMsg("");
   };
 
   return (
@@ -57,7 +88,8 @@ export default function SignupScreen() {
                 placeholderTextColor="#9CA3AF"
                 autoCapitalize="words"
                 value={name}
-                onChangeText={setName}
+                onChangeText={(val) => handleTextChange(setName, val)}
+                editable={!isSubmitting}
               />
             </View>
 
@@ -70,7 +102,8 @@ export default function SignupScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(val) => handleTextChange(setEmail, val)}
+                editable={!isSubmitting}
               />
             </View>
 
@@ -82,7 +115,8 @@ export default function SignupScreen() {
                 placeholderTextColor="#9CA3AF"
                 secureTextEntry
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(val) => handleTextChange(setPassword, val)}
+                editable={!isSubmitting}
               />
             </View>
 
@@ -94,18 +128,30 @@ export default function SignupScreen() {
                 placeholderTextColor="#9CA3AF"
                 secureTextEntry
                 value={confirmPassword}
-                onChangeText={setConfirmPassword}
+                onChangeText={(val) => handleTextChange(setConfirmPassword, val)}
+                editable={!isSubmitting}
               />
             </View>
 
             <TouchableOpacity
-              style={styles.primaryButton}
+              style={[styles.primaryButton, isSubmitting && styles.primaryButtonDisabled]}
               activeOpacity={0.8}
               onPress={handleSignup}
+              disabled={isSubmitting}
             >
-              <Text style={styles.primaryButtonText}>Sign Up</Text>
-              <MaterialCommunityIcons name="arrow-right" size={20} color="#FFF" />
+              {isSubmitting ? (
+                 <ActivityIndicator color="#FFF" />
+              ) : (
+                <>
+                  <Text style={styles.primaryButtonText}>Sign Up</Text>
+                  <MaterialCommunityIcons name="arrow-right" size={20} color="#FFF" />
+                </>
+              )}
             </TouchableOpacity>
+
+            {errorMsg ? (
+              <Text style={styles.errorMessage}>{errorMsg}</Text>
+            ) : null}
           </View>
 
           <View style={styles.footer}>
@@ -193,10 +239,20 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  primaryButtonDisabled: {
+    opacity: 0.7,
+  },
   primaryButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
+  },
+  errorMessage: {
+    color: '#EF4444',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 4,
   },
   footer: {
     gap: 16,

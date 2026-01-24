@@ -9,22 +9,46 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
-  Alert
+  Alert,
+  ActivityIndicator
 } from "react-native";
 import { useRouter } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { account } from "./_appwrite";
 
 export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
+    setErrorMsg("");
     if (!email || !password) {
       Alert.alert("Missing Fields", "Please enter your email and password.");
       return;
     }
-    router.replace('/(tabs)/convoy');
+
+    setIsLoading(true);
+    try {
+      await account.createEmailPasswordSession(email, password);
+      router.replace('/(tabs)/convoy');
+    } catch (error: any) {
+      console.error(error);
+      if (error.code === 401) {
+        setErrorMsg("Invalid email or password.");
+      } else {
+        Alert.alert("Login Failed", error.message || "An error occurred. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleTextChange = (setter: (val: string) => void, value: string) => {
+    setter(value);
+    if (errorMsg) setErrorMsg("");
   };
 
   return (
@@ -52,7 +76,8 @@ export default function LoginScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(val) => handleTextChange(setEmail, val)}
+                editable={!isLoading}
               />
             </View>
 
@@ -69,18 +94,30 @@ export default function LoginScreen() {
                 placeholderTextColor="#9CA3AF"
                 secureTextEntry
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(val) => handleTextChange(setPassword, val)}
+                editable={!isLoading}
               />
             </View>
 
             <TouchableOpacity 
-              style={styles.primaryButton}
+              style={[styles.primaryButton, isLoading && styles.primaryButtonDisabled]}
               activeOpacity={0.8}
-              onPress={handleLogin} 
+              onPress={handleLogin}
+              disabled={isLoading}
             >
-              <Text style={styles.primaryButtonText}>Log In</Text>
-              <MaterialCommunityIcons name="arrow-right" size={20} color="#FFF" />
+              {isLoading ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <>
+                  <Text style={styles.primaryButtonText}>Log In</Text>
+                  <MaterialCommunityIcons name="arrow-right" size={20} color="#FFF" />
+                </>
+              )}
             </TouchableOpacity>
+
+            {errorMsg ? (
+              <Text style={styles.errorMessage}>{errorMsg}</Text>
+            ) : null}
           </View>
 
           <View style={styles.footer}>
@@ -178,10 +215,20 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  primaryButtonDisabled: {
+    opacity: 0.7,
+  },
   primaryButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
+  },
+  errorMessage: {
+    color: '#EF4444',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 4,
   },
   footer: {
     gap: 16,

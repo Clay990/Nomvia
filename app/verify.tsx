@@ -1,119 +1,122 @@
-import React, { useState, useEffect, useRef } from "react";
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Image, 
-  Animated, 
-  Alert 
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
+  TouchableWithoutFeedback,
+  Keyboard,
+  ActivityIndicator
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import * as ImagePicker from 'expo-image-picker';
+import { ID } from "react-native-appwrite";
+import { account } from "./_appwrite";
 
 export default function VerifyScreen() {
   const router = useRouter();
-  const [image, setImage] = useState<string | null>(null);
-  
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const { userId, email } = useLocalSearchParams();
 
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.15, duration: 600, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-        Animated.delay(1000) 
-      ])
-    ).start();
-  }, []);
+  const [otp, setOtp] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert("Permission needed", "We need access to your photos to verify your van.");
+  const handleVerify = async () => {
+    if (!otp || otp.length < 6) {
+      Alert.alert("Invalid Code", "Please enter the 6-digit code sent to your email.");
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.5,
-    });
+    setIsSubmitting(true);
+    try {
+      await account.createSession(
+        Array.isArray(userId) ? userId[0] : userId,
+        otp
+      );
 
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
+      Alert.alert("Success", "Email verified! Welcome to Nomvia.");
+      router.replace('/(tabs)/convoy');
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Verification Failed", "Invalid code or expired. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleVerify = () => {
-    if (!image) {
-        Alert.alert(
-            "Skip Verification?", 
-            "You can join without verifying, but you won't get the 'Verified Nomad' badge.",
-            [
-                { text: "Cancel", style: "cancel" },
-                { text: "Join Anyway", onPress: () => router.push('/(tabs)/convoy') }
-            ]
-        );
-        return;
+  const handleResend = async () => {
+    try {
+      const emailStr = Array.isArray(email) ? email[0] : email;
+      await account.createEmailToken(ID.unique(), emailStr);
+      Alert.alert("Code Sent", `A new code has been sent to ${emailStr}`);
+    } catch (error) {
+      Alert.alert("Error", "Could not resend code. Please try again later.");
     }
-    
-    Alert.alert("Sent for Verification", "We will review your rig shortly. Welcome to Nomvia!", [
-      { text: "Enter App", onPress: () => router.push('/(tabs)/convoy') } 
-    ]);
   };
 
   return (
-    <View style={styles.container}>
-      
-      <View style={styles.content}>
-        <Text style={styles.title}>Verify Your Journey</Text>
-        
-        <Text style={styles.subtitle}>
-          Nomvia is open for all, but safety comes first. Verify your account to get the <Text style={{fontWeight: '700', color: '#111'}}>Verified Nomad</Text> badge.
-        </Text>
-
-        <TouchableOpacity style={styles.uploadBox} onPress={pickImage} activeOpacity={0.8}>
-          {image ? (
-            <Image source={{ uri: image }} style={styles.previewImage} />
-          ) : (
-            <Animated.View style={{ transform: [{ scale: pulseAnim }], alignItems: 'center' }}>
-              <MaterialCommunityIcons name="camera-plus" size={48} color="#000" />
-              <Text style={styles.uploadText}>Upload Van Setup or Peace Sign ✌️</Text>
-            </Animated.View>
-          )}
-        </TouchableOpacity>
-
-        <View style={styles.statusContainer}>
-            <MaterialCommunityIcons 
-              name={image ? "shield-check" : "shield-outline"} 
-              size={20} 
-              color={image ? "#000" : "#6B7280"} 
-            />
-            <Text style={styles.statusText}>
-              Status: <Text style={{fontWeight: '700', color: image ? '#000' : '#F59E0B'}}>
-                {image ? "Ready to Submit" : "Verification Pending"}
-              </Text>
-            </Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.container}
+      >
+        <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                <MaterialCommunityIcons name="arrow-left" size={24} color="#111" />
+            </TouchableOpacity>
         </View>
-      </View>
 
-      <View style={styles.footer}>
-        <TouchableOpacity 
-          style={styles.button} 
-          activeOpacity={0.8}
-          onPress={handleVerify}
-        >
-          <Text style={styles.buttonText}>
-            {image ? "Submit & Enter" : "Skip for Now"}
+        <View style={styles.content}>
+          <View style={styles.iconContainer}>
+            <MaterialCommunityIcons name="email-check-outline" size={64} color="#000" />
+          </View>
+
+          <Text style={styles.title}>Check your Inbox</Text>
+
+          <Text style={styles.subtitle}>
+            We've sent a 6-digit verification code to{"\n"}
+            <Text style={styles.emailHighlight}>{email}</Text>
           </Text>
-          {image && <MaterialCommunityIcons name="arrow-right" size={20} color="#FFF" />}
-        </TouchableOpacity>
-      </View>
 
-    </View>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.otpInput}
+              placeholder="000000"
+              placeholderTextColor="#E5E7EB"
+              keyboardType="number-pad"
+              maxLength={6}
+              value={otp}
+              onChangeText={setOtp}
+              autoFocus
+              editable={!isSubmitting}
+            />
+          </View>
+
+          <TouchableOpacity
+            style={[styles.button, isSubmitting && styles.buttonDisabled]}
+            activeOpacity={0.8}
+            onPress={handleVerify}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+                 <ActivityIndicator color="#FFF" />
+            ) : (
+                <Text style={styles.buttonText}>Verify & Login</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.resendLink} onPress={handleResend}>
+            <Text style={styles.resendText}>
+              Didn't receive the code? <Text style={styles.resendBold}>Resend</Text>
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -121,74 +124,98 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    padding: 24,
-    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+  },
+  header: {
+    marginTop: 60,
+    marginBottom: 20,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
   },
   content: {
     flex: 1,
-    marginTop: 40,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  iconContainer: {
+    marginBottom: 24,
+    width: 100,
+    height: 100,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
     fontSize: 28,
     fontWeight: '800',
     color: '#111',
     marginBottom: 12,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
     color: '#6B7280',
-    lineHeight: 24,
+    textAlign: 'center',
     marginBottom: 40,
+    lineHeight: 24,
   },
-  uploadBox: {
+  emailHighlight: {
+    color: '#111',
+    fontWeight: '600',
+  },
+  inputWrapper: {
     width: '100%',
-    height: 250,
-    backgroundColor: '#F3F4F6', 
-    borderRadius: 20,
+    marginBottom: 24,
+  },
+  otpInput: {
+    height: 64,
     borderWidth: 2,
     borderColor: '#E5E7EB',
-    borderStyle: 'dashed', 
+    borderRadius: 16,
+    fontSize: 32,
+    fontWeight: '700',
+    textAlign: 'center',
+    letterSpacing: 8,
+    color: '#111',
+    backgroundColor: '#F9FAFB',
+  },
+  button: {
+    width: '100%',
+    backgroundColor: '#000000',
+    height: 56,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
-    overflow: 'hidden',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  uploadText: {
-    marginTop: 12,
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#111',
-  },
-  previewImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    justifyContent: 'center',
-  },
-  statusText: {
-    fontSize: 14,
-    color: '#6B7280',
-  },
-  footer: {
-    paddingBottom: 20,
-  },
-  button: {
-    backgroundColor: '#000000',
-    height: 56,
-    borderRadius: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
+  buttonDisabled: {
+    opacity: 0.7,
   },
   buttonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
+  },
+  resendLink: {
+    padding: 10,
+  },
+  resendText: {
+    color: '#6B7280',
+    fontSize: 14,
+  },
+  resendBold: {
+    color: '#000',
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   }
 });
