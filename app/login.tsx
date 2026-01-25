@@ -9,7 +9,6 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
-  Alert,
   ActivityIndicator
 } from "react-native";
 import { useRouter } from "expo-router";
@@ -18,6 +17,7 @@ import { createURL } from "expo-linking";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { account } from "./_appwrite";
 import { OAuthProvider } from "react-native-appwrite";
+import { Snackbar } from 'react-native-paper';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -27,6 +27,16 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  
+  const [visible, setVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+
+  const onDismissSnackBar = () => setVisible(false);
+
+  const showSnackbar = (msg: string) => {
+    setSnackbarMessage(msg);
+    setVisible(true);
+  };
 
   const handleTextChange = (setter: (val: string) => void, value: string) => {
     setter(value);
@@ -36,7 +46,7 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     setErrorMsg("");
     if (!email || !password) {
-      Alert.alert("Missing Fields", "Please enter your email and password.");
+      showSnackbar("Please enter your email and password.");
       return;
     }
 
@@ -49,7 +59,7 @@ export default function LoginScreen() {
       if (error.code === 401) {
         setErrorMsg("Invalid email or password. Did you sign up with Google?");
       } else {
-        Alert.alert("Login Failed", error.message || "An error occurred. Please try again.");
+        showSnackbar(error.message || "An error occurred. Please try again.");
       }
     } finally {
       setIsLoading(false);
@@ -84,7 +94,7 @@ export default function LoginScreen() {
         if (error) {
            const errorString = JSON.stringify(error);
            if (errorString.includes("access_denied") || errorString.includes("user_oauth2_provider_error")) {
-             Alert.alert("Cancelled", "Google sign-in was cancelled.");
+             showSnackbar("Google sign-in was cancelled.");
              return; 
            }
            throw new Error(`Google Login failed: ${error}`);
@@ -99,7 +109,7 @@ export default function LoginScreen() {
       }
     } catch (error: any) {
       console.error("Google login error:", error);
-      Alert.alert("Google Login Failed", error.message || "An error occurred.");
+      showSnackbar(error.message || "Google Login Failed");
     }
   };
 
@@ -190,6 +200,18 @@ export default function LoginScreen() {
           </View>
 
         </View>
+
+        <Snackbar
+          visible={visible}
+          onDismiss={onDismissSnackBar}
+          duration={3000}
+          style={{ backgroundColor: '#111111' }}
+          action={{
+            label: 'OK',
+            onPress: onDismissSnackBar,
+          }}>
+          {snackbarMessage}
+        </Snackbar>
 
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
