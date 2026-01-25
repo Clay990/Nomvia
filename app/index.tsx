@@ -1,45 +1,56 @@
-import React, { useEffect, useRef } from "react";
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Animated, 
-  Dimensions 
+import React, { useEffect, useRef, useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Animated,
+  Dimensions
 } from "react-native";
 import { useRouter } from "expo-router";
-import LottieView from "lottie-react-native"; 
+import LottieView from "lottie-react-native";
 import { account } from "./_appwrite";
 
 const { width } = Dimensions.get('window');
 
 export default function WelcomeScreen() {
   const router = useRouter();
-  const fadeAnim = useRef(new Animated.Value(0)).current; 
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 1000,
-      useNativeDriver: true,
-    }).start();
-
     const checkSession = async () => {
       try {
         await account.get();
+        // Session exists, redirect immediately without showing content
         router.replace('/(tabs)/convoy');
       } catch (error) {
-        console.log("No active session");
+        // No session, show the welcome screen
+        setIsLoading(false);
+        startAnimation();
       }
     };
     checkSession();
   }, []);
 
+  const startAnimation = () => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 1000,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#FFFFFF' }} />
+    );
+  }
+
   return (
     <View style={styles.container}>
-      
-      <View style={styles.animationContainer}>
-        <LottieView
+
+      <View style={styles.animationContainer}>        <LottieView
           source={require('../assets/campervan.json')}
           autoPlay
           loop

@@ -18,7 +18,10 @@ export default function RootLayout() {
     <PaperProvider theme={theme}>
       <View style={{ flex: 1 }}>
         <StatusBar style="dark" />
-        <Stack screenOptions={{ headerShown: false }}>
+        <Stack screenOptions={{ 
+          headerShown: false,
+          animation: 'slide_from_right' 
+        }}>
           <Stack.Screen name="index" />
           <Stack.Screen name="signup" />
           <Stack.Screen name="login" />
