@@ -13,8 +13,13 @@ import {
   ActivityIndicator
 } from "react-native";
 import { useRouter } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
+import { createURL } from "expo-linking";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { account } from "./_appwrite";
+import { OAuthProvider } from "react-native-appwrite";
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -22,6 +27,11 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  const handleTextChange = (setter: (val: string) => void, value: string) => {
+    setter(value);
+    if (errorMsg) setErrorMsg("");
+  };
 
   const handleLogin = async () => {
     setErrorMsg("");
@@ -37,7 +47,7 @@ export default function LoginScreen() {
     } catch (error: any) {
       console.error(error);
       if (error.code === 401) {
-        setErrorMsg("Invalid email or password.");
+        setErrorMsg("Invalid email or password. Did you sign up with Google?");
       } else {
         Alert.alert("Login Failed", error.message || "An error occurred. Please try again.");
       }
@@ -46,9 +56,51 @@ export default function LoginScreen() {
     }
   };
 
-  const handleTextChange = (setter: (val: string) => void, value: string) => {
-    setter(value);
-    if (errorMsg) setErrorMsg("");
+  const handleGoogleLogin = async () => {
+    try {
+      const redirectUri = "appwrite-callback-6973457f000e977ae601://";
+
+      const authUrl = await account.createOAuth2Token(
+        OAuthProvider.Google,
+        redirectUri,
+        redirectUri
+      );
+
+      if (!authUrl) {
+        throw new Error("Failed to generate OAuth URL");
+      }
+
+      const result = await WebBrowser.openAuthSessionAsync(
+        authUrl.toString(),
+        redirectUri
+      );
+
+      if (result.type === 'success' && result.url) {
+        const url = new URL(result.url);
+        const secret = url.searchParams.get('secret');
+        const userId = url.searchParams.get('userId');
+        const error = url.searchParams.get('error');
+
+        if (error) {
+           const errorString = JSON.stringify(error);
+           if (errorString.includes("access_denied") || errorString.includes("user_oauth2_provider_error")) {
+             Alert.alert("Cancelled", "Google sign-in was cancelled.");
+             return; 
+           }
+           throw new Error(`Google Login failed: ${error}`);
+        }
+
+        if (secret && userId) {
+          await account.createSession(userId, secret);
+          router.replace('/(tabs)/convoy');
+        } else {
+           throw new Error("Login failed: missing secret in callback");
+        }
+      }
+    } catch (error: any) {
+      console.error("Google login error:", error);
+      Alert.alert("Google Login Failed", error.message || "An error occurred.");
+    }
   };
 
   return (
@@ -121,7 +173,11 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.footer}>
-            <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
+            <TouchableOpacity 
+              style={styles.socialButton} 
+              activeOpacity={0.7}
+              onPress={handleGoogleLogin}
+            >
               <MaterialCommunityIcons name="google" size={20} color="#111" />
               <Text style={styles.socialButtonText}>Google</Text>
             </TouchableOpacity>

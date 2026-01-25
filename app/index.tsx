@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import LottieView from "lottie-react-native"; 
+import { account } from "./_appwrite";
 
 const { width } = Dimensions.get('window');
 
@@ -22,6 +23,16 @@ export default function WelcomeScreen() {
       duration: 1000,
       useNativeDriver: true,
     }).start();
+
+    const checkSession = async () => {
+      try {
+        await account.get();
+        router.replace('/(tabs)/convoy');
+      } catch (error) {
+        console.log("No active session");
+      }
+    };
+    checkSession();
   }, []);
 
   return (
