@@ -14,6 +14,7 @@ import {
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { createURL } from "expo-linking";
+import * as SecureStore from 'expo-secure-store';
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { account } from "./_appwrite";
 import { OAuthProvider } from "react-native-appwrite";
@@ -53,6 +54,7 @@ export default function LoginScreen() {
     setIsLoading(true);
     try {
       await account.createEmailPasswordSession(email, password);
+      await SecureStore.setItemAsync('session_active', 'true');
       router.replace('/(tabs)/convoy');
     } catch (error: any) {
       console.error(error);
@@ -102,6 +104,7 @@ export default function LoginScreen() {
 
         if (secret && userId) {
           await account.createSession(userId, secret);
+          await SecureStore.setItemAsync('session_active', 'true');
           router.replace('/(tabs)/convoy');
         } else {
            throw new Error("Login failed: missing secret in callback");

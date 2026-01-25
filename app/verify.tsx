@@ -15,6 +15,7 @@ import {
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { ID } from "react-native-appwrite";
+import * as SecureStore from 'expo-secure-store';
 import { account } from "./_appwrite";
 
 export default function VerifyScreen() {
@@ -36,6 +37,8 @@ export default function VerifyScreen() {
         Array.isArray(userId) ? userId[0] : userId,
         otp
       );
+
+      await SecureStore.setItemAsync('session_active', 'true');
 
       Alert.alert("Success", "Email verified! Welcome to Nomvia.");
       router.replace('/(tabs)/convoy');

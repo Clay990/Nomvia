@@ -12,6 +12,9 @@ import {
   UIManager,
   View
 } from "react-native";
+import { useRouter } from "expo-router";
+import * as SecureStore from 'expo-secure-store';
+import { account } from "../_appwrite";
 
 if (Platform.OS === 'android') {
   if (UIManager.setLayoutAnimationEnabledExperimental) {
@@ -56,6 +59,7 @@ const USER = {
 };
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const [rigExpanded, setRigExpanded] = useState(false);
   const [helpExpanded, setHelpExpanded] = useState(false);
   const [builderExpanded, setBuilderExpanded] = useState(false);
@@ -65,6 +69,18 @@ export default function ProfileScreen() {
   const toggleSection = (setter: any, value: boolean) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setter(!value);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await account.deleteSession('current');
+      await SecureStore.deleteItemAsync('session_active');
+      router.replace('/login');
+    } catch (error) {
+      console.error("Logout failed:", error);
+      await SecureStore.deleteItemAsync('session_active');
+      router.replace('/login');
+    }
   };
 
   return (
@@ -98,8 +114,8 @@ export default function ProfileScreen() {
               <TouchableOpacity style={styles.primaryBtn}>
                 <Text style={styles.primaryBtnText}>Message</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.secondaryBtn}>
-                <Text style={styles.secondaryBtnText}>Connect</Text>
+              <TouchableOpacity style={styles.secondaryBtn} onPress={handleLogout}>
+                <Text style={styles.secondaryBtnText}>Logout</Text>
               </TouchableOpacity>
             </View>
           </View>

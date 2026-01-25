@@ -1,32 +1,48 @@
 import React, { useEffect, useRef, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Animated,
-  Dimensions
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  StyleSheet, 
+  Animated, 
+  Dimensions 
 } from "react-native";
 import { useRouter } from "expo-router";
-import LottieView from "lottie-react-native";
+import LottieView from "lottie-react-native"; 
+import * as SplashScreen from 'expo-splash-screen';
+import * as SecureStore from 'expo-secure-store';
 import { account } from "./_appwrite";
 
 const { width } = Dimensions.get('window');
 
 export default function WelcomeScreen() {
   const router = useRouter();
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const [isLoading, setIsLoading] = useState(true);
+  const fadeAnim = useRef(new Animated.Value(0)).current; 
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     const checkSession = async () => {
       try {
+        const hasSession = await SecureStore.getItemAsync('session_active');
+        
+        if (hasSession === 'true') {
+          router.replace('/(tabs)/convoy');
+          setTimeout(() => {
+            SplashScreen.hideAsync();
+          }, 200);
+          return;
+        }
+
         await account.get();
-        // Session exists, redirect immediately without showing content
+        await SecureStore.setItemAsync('session_active', 'true');
         router.replace('/(tabs)/convoy');
+        setTimeout(() => {
+            SplashScreen.hideAsync();
+        }, 200);
+
       } catch (error) {
-        // No session, show the welcome screen
-        setIsLoading(false);
+        setIsReady(true);
+        await SplashScreen.hideAsync();
         startAnimation();
       }
     };
@@ -41,16 +57,15 @@ export default function WelcomeScreen() {
     }).start();
   };
 
-  if (isLoading) {
-    return (
-      <View style={{ flex: 1, backgroundColor: '#FFFFFF' }} />
-    );
+  if (!isReady) {
+    return null;
   }
 
   return (
     <View style={styles.container}>
-
-      <View style={styles.animationContainer}>        <LottieView
+      
+      <View style={styles.animationContainer}>
+        <LottieView
           source={require('../assets/campervan.json')}
           autoPlay
           loop

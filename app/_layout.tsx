@@ -2,6 +2,10 @@ import { Stack } from "expo-router";
 import { View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { PaperProvider, MD3LightTheme } from 'react-native-paper';
+import * as SplashScreen from 'expo-splash-screen';
+
+
+SplashScreen.preventAutoHideAsync();
 
 const theme = {
   ...MD3LightTheme,
