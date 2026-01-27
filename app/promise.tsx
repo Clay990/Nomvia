@@ -60,7 +60,7 @@ export default function PromiseScreen() {
         <TouchableOpacity 
           style={styles.button} 
           activeOpacity={0.8}
-          onPress={() => router.push('/verify')} // Navigates to Verification
+          onPress={() => router.replace('/(tabs)/convoy')} 
         >
           <Text style={styles.buttonText}>I'm In</Text>
         </TouchableOpacity>

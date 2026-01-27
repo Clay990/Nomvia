@@ -41,7 +41,7 @@ export default function VerifyScreen() {
       await SecureStore.setItemAsync('session_active', 'true');
 
       Alert.alert("Success", "Email verified! Welcome to Nomvia.");
-      router.replace('/(tabs)/convoy');
+      router.replace('/onboarding');
     } catch (error) {
       console.error(error);
       Alert.alert("Verification Failed", "Invalid code or expired. Please try again.");

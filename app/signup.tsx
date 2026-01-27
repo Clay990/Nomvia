@@ -32,7 +32,6 @@ export default function SignupScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Snackbar state
   const [visible, setVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
 
@@ -61,20 +60,15 @@ export default function SignupScreen() {
 
     setIsSubmitting(true);
     try {
-      // 1. Create Account
       const user = await account.create(ID.unique(), email, password, name);
       
-      // 2. Create Email Token (OTP) for Verification/Login
       await account.createEmailToken(ID.unique(), email);
 
-      // 3. Navigate to Verify Screen
       router.push({
         pathname: '/verify',
         params: { userId: user.$id, email: email }
       });
     } catch (error: any) {
-      // Loose equality check handles both number (409) and string ("409")
-      // Also check for generic messages that often mask the conflict
       const isConflict = 
         error.code == 409 || 
         (error.message && error.message.toLowerCase().includes("user with the same id")) ||
@@ -94,7 +88,6 @@ export default function SignupScreen() {
 
   const handleGoogleLogin = async () => {
     try {
-      // Use the root scheme without path
       const redirectUri = "appwrite-callback-6973457f000e977ae601://";
       
       const authUrl = await account.createOAuth2Token(
@@ -130,7 +123,7 @@ export default function SignupScreen() {
         if (secret && userId) {
           await account.createSession(userId, secret);
           await SecureStore.setItemAsync('session_active', 'true');
-          router.replace('/(tabs)/convoy');
+          router.replace('/onboarding');
         } else {
            throw new Error("Login failed: missing secret in callback");
         }

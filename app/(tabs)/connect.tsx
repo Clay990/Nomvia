@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   Dimensions,
@@ -43,6 +44,7 @@ const PROFILES = [
 ];
 
 export default function ConnectScreen() {
+  const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showMatch, setShowMatch] = useState(false);
 
@@ -63,6 +65,11 @@ export default function ConnectScreen() {
       alert("You've seen everyone nearby!");
       setCurrentIndex(0);
     }
+  };
+
+  const handleSendMessage = () => {
+    setShowMatch(false);
+    router.push(`/messages/${currentProfile.id}`);
   };
 
   return (
@@ -144,7 +151,7 @@ export default function ConnectScreen() {
                 </View>
                 <Text style={styles.matchTitle}>It's a Match!</Text>
                 <Text style={styles.matchSub}>You and {currentProfile?.name} both want to connect.</Text>
-                <TouchableOpacity style={styles.chatButton} onPress={() => setShowMatch(false)}>
+                <TouchableOpacity style={styles.chatButton} onPress={handleSendMessage}>
                     <Text style={styles.chatButtonText}>Send Message</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => { setShowMatch(false); nextCard(); }}>

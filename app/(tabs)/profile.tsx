@@ -10,17 +10,19 @@ import {
   Text,
   TouchableOpacity,
   UIManager,
-  View
+  View,
+  Dimensions
 } from "react-native";
 import { useRouter } from "expo-router";
-import * as SecureStore from 'expo-secure-store';
-import { account } from "../_appwrite";
+import { LinearGradient } from 'expo-linear-gradient';
 
 if (Platform.OS === 'android') {
   if (UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
   }
 }
+
+const { width } = Dimensions.get('window');
 
 const USER = {
   name: "Suraj Mondal",
@@ -32,10 +34,10 @@ const USER = {
   location: "Ladakh, India",
   bio: "Traveling full-time since 2019. Love mountains, slow mornings, and building apps from my van.",
   snapshot: [
-    { label: "5 yrs traveling", icon: "clock-outline" },
-    { label: "Slow traveler", icon: "tortoise" },
-    { label: "Nature lover", icon: "pine-tree" },
-    { label: "Pet friendly", icon: "paw" }
+    { label: "5y Road", icon: "road-variant" },
+    { label: "Slow Pace", icon: "tortoise" },
+    { label: "Nature", icon: "pine-tree" },
+    { label: "Pets", icon: "paw" }
   ],
   travelStyle: {
     pace: "Slow & Steady",
@@ -55,7 +57,8 @@ const USER = {
     summary: "Experienced Builder • 8 vans built",
     specialty: "Full Conversions & Electrical",
     portfolio: "View Portfolio"
-  }
+  },
+  joined: "January 2024"
 };
 
 export default function ProfileScreen() {
@@ -71,302 +74,378 @@ export default function ProfileScreen() {
     setter(!value);
   };
 
-  const handleLogout = async () => {
-    try {
-      await account.deleteSession('current');
-      await SecureStore.deleteItemAsync('session_active');
-      router.replace('/login');
-    } catch (error) {
-      console.error("Logout failed:", error);
-      await SecureStore.deleteItemAsync('session_active');
-      router.replace('/login');
-    }
+  const handleSOS = () => {
+    alert("Emergency SOS Activated: Notifying nearby nomads and emergency contacts.");
   };
 
   return (
     <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.headerContainer}>
-          <Image source={{ uri: USER.coverImage }} style={styles.coverImage} />
-          <View style={styles.profileMeta}>
-            <View style={styles.avatarContainer}>
-              <Image source={{ uri: USER.avatar }} style={styles.avatar} />
-              {USER.verified && (
-                <View style={styles.verifiedBadge}>
-                  <MaterialCommunityIcons name="check-decagram" size={16} color="#ffffff" />
-                </View>
-              )}
-            </View>
-            <Text style={styles.name}>{USER.name}</Text>
-            <View style={styles.detailsRow}>
-              <Text style={styles.detailText}>{USER.age}</Text>
-              <Text style={styles.detailDot}>•</Text>
-              <View style={styles.roleTag}>
-                <Text style={styles.roleText}>{USER.role.toUpperCase()}</Text>
-              </View>
-              <Text style={styles.detailDot}>•</Text>
-              <View style={styles.locationRow}>
-                <MaterialCommunityIcons name="map-marker" size={12} color="#6B7280" />
-                <Text style={styles.detailText}>{USER.location}</Text>
-              </View>
-            </View>
-            <View style={styles.actionRow}>
-              <TouchableOpacity style={styles.primaryBtn}>
-                <Text style={styles.primaryBtnText}>Message</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.secondaryBtn} onPress={handleLogout}>
-                <Text style={styles.secondaryBtnText}>Logout</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-        <View style={styles.section}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.snapshotScroll}>
-            {USER.snapshot.map((item, index) => (
-              <View key={index} style={styles.snapChip}>
-                <MaterialCommunityIcons name={item.icon as any} size={14} color="#111" />
-                <Text style={styles.snapText}>{item.label}</Text>
-              </View>
-            ))}
-          </ScrollView>
-          <View style={styles.passportRow}>
-            <View style={styles.passportItem}>
-              <Text style={styles.passportLabel}>PACE</Text>
-              <Text style={styles.passportValue}>{USER.travelStyle.pace}</Text>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.passportItem}>
-              <Text style={styles.passportLabel}>MODE</Text>
-              <Text style={styles.passportValue}>{USER.travelStyle.mode}</Text>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.passportItem}>
-              <Text style={styles.passportLabel}>STYLE</Text>
-              <Text style={styles.passportValue}>{USER.travelStyle.style}</Text>
-            </View>
-          </View>
-        </View>
-        <View style={styles.hr} />
-        <View style={styles.section}>
-          <Text style={styles.sectionHeader}>About</Text>
-          <Text style={styles.bioText}>{USER.bio}</Text>
-          <View style={styles.interestGrid}>
-            {USER.interests.map((interest) => (
-              <View key={interest} style={styles.interestChip}>
-                <Text style={styles.interestText}>{interest}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-        <View style={styles.hr} />
-        <View style={styles.section}>
-          <View style={styles.rowBetween}>
-            <Text style={styles.sectionHeader}>My Path</Text>
-            <TouchableOpacity>
-              <Text style={styles.linkText}>View Full Journey</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.mapPreviewCard}>
-            <Image
-              source={{ uri: "https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=800&auto=format&fit=crop" }}
-              style={styles.mapImage}
-            />
-            <View style={styles.mapOverlay}>
-              <View style={styles.mapBadge}>
-                <View style={styles.pulsingDot} />
-                <Text style={styles.mapBadgeText}>Current: {USER.location}</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-        <View style={styles.hr} />
-        <AccordionItem
-          title="My Setup"
-          preview={USER.rig.summary}
-          icon="van-utility"
-          expanded={rigExpanded}
-          onPress={() => toggleSection(setRigExpanded, rigExpanded)}
-        >
-          <View style={styles.accordionContent}>
-            <Image source={{ uri: USER.rig.image }} style={styles.rigImage} />
-            <Text style={styles.rigName}>{USER.rig.name}</Text>
-            <View style={styles.techList}>
-              {USER.rig.tech.map(t => (
-                <Text key={t} style={styles.techItem}>• {t}</Text>
-              ))}
-            </View>
-          </View>
-        </AccordionItem>
-        <View style={styles.hr} />
-        <AccordionItem
-          title="Knowledge & Help"
-          preview="Can help with: Solar, Code..."
-          icon="lightbulb-outline"
-          expanded={helpExpanded}
-          onPress={() => toggleSection(setHelpExpanded, helpExpanded)}
-        >
-          <View style={styles.accordionContent}>
-            <View style={styles.skillRow}>
-              {USER.skills.map(skill => (
-                <View key={skill} style={styles.skillTag}>
-                  <Text style={styles.skillText}>{skill}</Text>
-                </View>
-              ))}
-            </View>
-            <View style={styles.toggleRow}>
-              <Text style={styles.toggleLabel}>I'm happy to help others</Text>
-              <Switch
-                value={isHappyToHelp}
-                onValueChange={setIsHappyToHelp}
-                trackColor={{ false: "#E5E7EB", true: "#111" }}
-                thumbColor="#FFF"
-              />
-            </View>
-          </View>
-        </AccordionItem>
-        {USER.role === "Builder" && (
-          <>
-            <View style={styles.hr} />
-            <AccordionItem
-              title="Builder Profile"
-              preview={USER.builder.summary}
-              icon="hammer-wrench"
-              expanded={builderExpanded}
-              onPress={() => toggleSection(setBuilderExpanded, builderExpanded)}
-            >
-              <View style={styles.accordionContent}>
-                <Text style={styles.builderSpecLabel}>SPECIALTY</Text>
-                <Text style={styles.builderSpecValue}>{USER.builder.specialty}</Text>
-                <TouchableOpacity style={styles.portfolioBtn}>
-                  <Text style={styles.portfolioText}>{USER.builder.portfolio}</Text>
-                  <MaterialCommunityIcons name="arrow-right" size={16} color="#FFF" />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+        <View style={styles.headerWrapper}>
+          <Image source={{ uri: USER.coverImage }} style={styles.headerImage} />
+          <LinearGradient
+            colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.6)', '#F8F9FA']}
+            style={styles.headerGradient}
+          />
+          
+          <View style={styles.topBar}>
+             <View style={styles.locationTag}>
+                <MaterialCommunityIcons name="map-marker" size={14} color="#FFF" />
+                <Text style={styles.locationText}>{USER.location}</Text>
+             </View>
+             <View style={styles.headerIcons}>
+                <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/messages')}>
+                   <MaterialCommunityIcons name="chat-processing-outline" size={20} color="#FFF" />
+                   <View style={styles.notificationDot} />
                 </TouchableOpacity>
-              </View>
-            </AccordionItem>
-          </>
-        )}
-        <View style={styles.hr} />
-        <AccordionItem
-          title="Social Links"
-          preview="Instagram · YouTube"
-          icon="at"
-          expanded={socialsExpanded}
-          onPress={() => toggleSection(setSocialsExpanded, socialsExpanded)}
-        >
-          <View style={[styles.accordionContent, { flexDirection: 'row', gap: 16 }]}>
-            <SocialIcon name="instagram" color="#E1306C" />
-            <SocialIcon name="youtube" color="#FF0000" />
-            <SocialIcon name="web" color="#111" />
+                <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/settings')}>
+                   <MaterialCommunityIcons name="cog-outline" size={20} color="#FFF" />
+                </TouchableOpacity>
+             </View>
           </View>
-        </AccordionItem>
-        <View style={styles.footer}>
-            <TouchableOpacity style={styles.sosButton}>
-                <MaterialCommunityIcons name="alert-circle" size={18} color="#FFF" />
-                <Text style={styles.sosText}>Emergency SOS</Text>
-            </TouchableOpacity>
-            <Text style={styles.joinedText}>Joined Nomvia in 2024 • Verified</Text>
+
+          <View style={styles.identityOverlay}>
+             <View style={styles.avatarRow}>
+                <Image source={{ uri: USER.avatar }} style={styles.avatar} />
+                <View style={styles.identityText}>
+                   <Text style={styles.heroName}>{USER.name}</Text>
+                   <View style={styles.badgeRow}>
+                      <View style={styles.roleBadge}>
+                         <Text style={styles.roleText}>{USER.role}</Text>
+                      </View>
+                      {USER.verified && (
+                        <MaterialCommunityIcons name="check-decagram" size={20} color="#3B82F6" />
+                      )}
+                   </View>
+                </View>
+             </View>
+          </View>
         </View>
-        <View style={{height: 10}} />
+
+        <View style={styles.contentBody}>
+            <View style={styles.statsGrid}>
+                {USER.snapshot.map((snap, i) => (
+                    <View key={i} style={styles.statItem}>
+                        <View style={styles.statIconBox}>
+                            <MaterialCommunityIcons name={snap.icon as any} size={20} color="#111" />
+                        </View>
+                        <Text style={styles.statLabel}>{snap.label}</Text>
+                    </View>
+                ))}
+            </View>
+
+            <View style={styles.cardSection}>
+                <Text style={styles.sectionTitle}>The Journey</Text>
+                <Text style={styles.bioText}>{USER.bio}</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tagsScroll}>
+                    {USER.interests.map(tag => (
+                        <Text key={tag} style={styles.hashTag}>#{tag}</Text>
+                    ))}
+                </ScrollView>
+            </View>
+
+            <TouchableOpacity 
+                activeOpacity={0.9} 
+                onPress={() => toggleSection(setRigExpanded, rigExpanded)}
+                style={styles.rigCard}
+            >
+                <Image source={{ uri: USER.rig.image }} style={styles.rigBg} />
+                <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.rigOverlay}>
+                    <View>
+                        <View style={styles.rigHeader}>
+                            <MaterialCommunityIcons name="van-utility" size={24} color="#FFF" />
+                            <Text style={styles.rigTitle}>{USER.rig.name}</Text>
+                        </View>
+                        <Text style={styles.rigSub}>{USER.rig.summary}</Text>
+                        {rigExpanded && (
+                            <View style={styles.rigExpandedContent}>
+                                <View style={styles.techStack}>
+                                    {USER.rig.tech.map(t => (
+                                        <View key={t} style={styles.techPill}>
+                                            <Text style={styles.techText}>{t}</Text>
+                                        </View>
+                                    ))}
+                                </View>
+                            </View>
+                        )}
+                    </View>
+                    <MaterialCommunityIcons 
+                        name={rigExpanded ? "chevron-up" : "chevron-down"} 
+                        size={24} 
+                        color="#FFF" 
+                    />
+                </LinearGradient>
+            </TouchableOpacity>
+
+            <View style={styles.mapWidget}>
+                <View style={styles.mapHeader}>
+                    <Text style={styles.widgetTitle}>Current Location</Text>
+                    <TouchableOpacity>
+                        <Text style={styles.seeAllText}>View Map</Text>
+                    </TouchableOpacity>
+                </View>
+                <View style={styles.mapVisual}>
+                    <Image 
+                        source={{ uri: "https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=800&auto=format&fit=crop" }} 
+                        style={styles.mapImg}
+                    />
+                    <View style={styles.pulseMarker}>
+                         <View style={styles.pulseCore} />
+                         <View style={styles.pulseRing} />
+                    </View>
+                    <View style={styles.locBadge}>
+                         <Text style={styles.locBadgeText}>{USER.location}</Text>
+                    </View>
+                </View>
+            </View>
+
+            {USER.role === "Builder" && (
+                <View style={styles.serviceCard}>
+                    <View style={styles.serviceHeader}>
+                        <View style={styles.serviceIcon}>
+                             <MaterialCommunityIcons name="hammer-wrench" size={20} color="#FFF" />
+                        </View>
+                        <View style={{flex: 1}}>
+                            <Text style={styles.serviceTitle}>Builder & Helper</Text>
+                            <Text style={styles.serviceSub}>Open to work</Text>
+                        </View>
+                        <Switch
+                            value={isHappyToHelp}
+                            onValueChange={setIsHappyToHelp}
+                            trackColor={{ false: "#E5E7EB", true: "#111" }}
+                            thumbColor="#FFF"
+                        />
+                    </View>
+                    <View style={styles.divider} />
+                    <View style={styles.serviceDetails}>
+                         <Text style={styles.specLabel}>SPECIALTY</Text>
+                         <Text style={styles.specText}>{USER.builder.specialty}</Text>
+                         <View style={styles.skillsRow}>
+                            {USER.skills.map(skill => (
+                                <Text key={skill} style={styles.skillSimple}>• {skill}</Text>
+                            ))}
+                         </View>
+                    </View>
+                </View>
+            )}
+
+            <View style={styles.actionFooter}>
+                 <View style={styles.socialRow}>
+                     <TouchableOpacity style={styles.socialCircle}>
+                        <MaterialCommunityIcons name="instagram" size={20} color="#111" />
+                     </TouchableOpacity>
+                     <TouchableOpacity style={styles.socialCircle}>
+                        <MaterialCommunityIcons name="youtube" size={20} color="#111" />
+                     </TouchableOpacity>
+                     <TouchableOpacity style={styles.socialCircle}>
+                        <MaterialCommunityIcons name="web" size={20} color="#111" />
+                     </TouchableOpacity>
+                 </View>
+
+                 <TouchableOpacity style={styles.sosButton} onPress={handleSOS}>
+                    <MaterialCommunityIcons name="alert-circle" size={22} color="#FFF" />
+                    <Text style={styles.sosText}>Emergency SOS</Text>
+                 </TouchableOpacity>
+
+                 <Text style={styles.joinedText}>Joined {USER.joined}</Text>
+            </View>
+
+        </View>
       </ScrollView>
     </View>
   );
 }
 
-function AccordionItem({ title, preview, icon, expanded, onPress, children }: any) {
-  return (
-    <View style={styles.section}>
-      <TouchableOpacity style={styles.accordionHeader} onPress={onPress} activeOpacity={0.7}>
-        <View style={styles.accordionLeft}>
-          <View style={styles.iconBox}>
-            <MaterialCommunityIcons name={icon} size={20} color="#111" />
-          </View>
-          <View>
-            <Text style={styles.accordionTitle}>{title}</Text>
-            {!expanded && <Text style={styles.accordionPreview}>{preview}</Text>}
-          </View>
-        </View>
-        <MaterialCommunityIcons name={expanded ? "chevron-up" : "chevron-down"} size={24} color="#9CA3AF" />
-      </TouchableOpacity>
-      {expanded && children}
-    </View>
-  );
-}
-
-function SocialIcon({ name, color }: any) {
-  return (
-    <TouchableOpacity style={styles.socialBtn}>
-      <MaterialCommunityIcons name={name as any} size={24} color={color} />
-    </TouchableOpacity>
-  )
-
-  
-}
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
-  hr: { height: 1, backgroundColor: '#F3F4F6', marginVertical: 12 },
-  headerContainer: { marginBottom: 20 },
-  coverImage: { width: '100%', height: 140, resizeMode: 'cover' },
-  profileMeta: { paddingHorizontal: 24, marginTop: -40, alignItems: 'center' },
-  avatarContainer: { position: 'relative', marginBottom: 12 },
-  avatar: { width: 90, height: 90, borderRadius: 45, borderWidth: 3, borderColor: '#111' },
-  verifiedBadge: { position: 'absolute', bottom: 0, right: 0, backgroundColor: '#000000', width: 24, height: 24, borderRadius: 12, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#FFF' },
-  name: { fontSize: 26, fontWeight: '800', color: '#111', marginBottom: 4 },
-  detailsRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 16 },
-  detailText: { fontSize: 13, color: '#4B5563', fontWeight: '500' },
-  detailDot: { fontSize: 10, color: '#9CA3AF' },
-  roleTag: { backgroundColor: '#F3F4F6', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-  roleText: { fontSize: 10, fontWeight: '800', color: '#111' },
-  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  actionRow: { flexDirection: 'row', gap: 12, width: '100%' },
-  primaryBtn: { flex: 1, backgroundColor: '#111', paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
-  primaryBtnText: { color: '#FFF', fontWeight: '700', fontSize: 14 },
-  secondaryBtn: { flex: 1, backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E5E7EB', paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
-  secondaryBtnText: { color: '#111', fontWeight: '700', fontSize: 14 },
-  section: { paddingHorizontal: 24, paddingVertical: 8 },
-  snapshotScroll: { flexDirection: 'row', marginBottom: 20 },
-  snapChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#F9FAFB', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, marginRight: 8, borderWidth: 1, borderColor: '#F3F4F6' },
-  snapText: { fontSize: 12, fontWeight: '600', color: '#111' },
-  passportRow: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#F9FAFB', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#F3F4F6' },
-  passportItem: { flex: 1, alignItems: 'center' },
-  passportLabel: { fontSize: 10, color: '#9CA3AF', fontWeight: '700', marginBottom: 4 },
-  passportValue: { fontSize: 13, color: '#111', fontWeight: '700', textAlign: 'center' },
-  divider: { width: 1, height: '100%', backgroundColor: '#E5E7EB' },
-  sectionHeader: { fontSize: 16, fontWeight: '800', color: '#111', marginBottom: 8 },
-  bioText: { fontSize: 14, color: '#4B5563', lineHeight: 22, marginBottom: 16 },
-  interestGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  interestChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E5E7EB' },
-  interestText: { fontSize: 12, fontWeight: '600', color: '#111' },
-  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  linkText: { fontSize: 12, fontWeight: '600', color: '#111', textDecorationLine: 'underline' },
-  mapPreviewCard: { height: 120, borderRadius: 12, overflow: 'hidden', position: 'relative', backgroundColor: '#F3F4F6' },
-  mapImage: { width: '100%', height: '100%', opacity: 0.8 },
-  mapOverlay: { position: 'absolute', bottom: 12, left: 12 },
-  mapBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(0,0,0,0.8)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20 },
-  pulsingDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#10B981' },
-  mapBadgeText: { color: '#FFF', fontSize: 11, fontWeight: '700' },
-  accordionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
-  accordionLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  iconBox: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
-  accordionTitle: { fontSize: 15, fontWeight: '700', color: '#111' },
-  accordionPreview: { fontSize: 12, color: '#6B7280', marginTop: 2 },
-  accordionContent: { marginTop: 12, paddingLeft: 48 },
-  rigImage: { width: '100%', height: 120, borderRadius: 12, marginBottom: 12 },
-  rigName: { fontSize: 16, fontWeight: '800', color: '#111', marginBottom: 4 },
-  techList: { gap: 4 },
-  techItem: { fontSize: 13, color: '#4B5563' },
-  skillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
-  skillTag: { backgroundColor: '#FEF3C7', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6 },
-  skillText: { fontSize: 12, fontWeight: '700', color: '#92400E' },
-  toggleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F9FAFB', padding: 12, borderRadius: 10 },
-  toggleLabel: { fontSize: 13, fontWeight: '600', color: '#111' },
-  builderSpecLabel: { fontSize: 10, color: '#9CA3AF', fontWeight: '700', marginBottom: 4 },
-  builderSpecValue: { fontSize: 14, color: '#111', fontWeight: '600', marginBottom: 12 },
-  portfolioBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#111', alignSelf: 'flex-start', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
-  portfolioText: { color: '#FFF', fontSize: 12, fontWeight: '700' },
-  socialBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#E5E7EB' },
-  footer: { padding: 24, alignItems: 'center' },
-  sosButton: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#EF4444', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 30, marginBottom: 16 },
-  sosText: { color: '#FFF', fontWeight: '700', fontSize: 14 },
-  joinedText: { color: '#9CA3AF', fontSize: 12 },
+  container: { flex: 1, backgroundColor: '#F8F9FA' },
+  headerWrapper: { height: 380, position: 'relative' },
+  headerImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  headerGradient: { position: 'absolute', width: '100%', height: '100%', top: 0 },
+  
+  topBar: {
+     position: 'absolute',
+     top: 50,
+     left: 20,
+     right: 20,
+     flexDirection: 'row',
+     justifyContent: 'space-between',
+     alignItems: 'center',
+     zIndex: 10
+  },
+  locationTag: {
+     flexDirection: 'row',
+     alignItems: 'center',
+     backgroundColor: 'rgba(0,0,0,0.5)',
+     paddingHorizontal: 12,
+     paddingVertical: 6,
+     borderRadius: 20,
+     gap: 4
+  },
+  locationText: { color: '#FFF', fontSize: 12, fontWeight: '600' },
+  headerIcons: { flexDirection: 'row', gap: 10 },
+  iconButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)'
+  },
+  notificationDot: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#EF4444',
+    borderWidth: 1,
+    borderColor: '#FFF'
+  },
+
+  identityOverlay: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+  },
+  avatarRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 16 },
+  avatar: { 
+     width: 100, 
+     height: 100, 
+     borderRadius: 20, 
+     borderWidth: 4, 
+     borderColor: '#FFF',
+     transform: [{ rotate: '-3deg' }] 
+  },
+  identityText: { flex: 1, paddingBottom: 8 },
+  heroName: { fontSize: 32, fontWeight: '900', color: '#111', letterSpacing: -1, textShadowColor: 'rgba(255,255,255,0.5)', textShadowRadius: 10 },
+  badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  roleBadge: { backgroundColor: '#111', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
+  roleText: { color: '#FFF', fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
+
+  contentBody: { paddingHorizontal: 20, marginTop: -10 },
+  
+  statsGrid: {
+     flexDirection: 'row',
+     justifyContent: 'space-between',
+     backgroundColor: '#FFF',
+     padding: 16,
+     borderRadius: 16,
+     marginBottom: 20,
+     shadowColor: "#000",
+     shadowOffset: { width: 0, height: 2 },
+     shadowOpacity: 0.05,
+     shadowRadius: 8,
+     elevation: 2,
+  },
+  statItem: { alignItems: 'center', gap: 6 },
+  statIconBox: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
+  statLabel: { fontSize: 11, fontWeight: '600', color: '#4B5563' },
+
+  cardSection: { marginBottom: 24 },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#111', marginBottom: 8 },
+  bioText: { fontSize: 15, color: '#4B5563', lineHeight: 24, marginBottom: 12 },
+  tagsScroll: { flexDirection: 'row' },
+  hashTag: { fontSize: 13, fontWeight: '600', color: '#3B82F6', marginRight: 12 },
+
+  rigCard: {
+     height: 220,
+     borderRadius: 24,
+     overflow: 'hidden',
+     marginBottom: 24,
+     backgroundColor: '#000',
+     position: 'relative'
+  },
+  rigBg: { width: '100%', height: '100%', resizeMode: 'cover', opacity: 0.8 },
+  rigOverlay: { 
+     position: 'absolute', 
+     bottom: 0, left: 0, right: 0, top: 0,
+     justifyContent: 'space-between',
+     padding: 20
+  },
+  rigHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 'auto', marginBottom: 4 },
+  rigTitle: { color: '#FFF', fontSize: 22, fontWeight: '800' },
+  rigSub: { color: 'rgba(255,255,255,0.8)', fontSize: 14 },
+  rigExpandedContent: { marginTop: 16 },
+  techStack: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  techPill: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  techText: { color: '#FFF', fontSize: 11, fontWeight: '600' },
+
+  mapWidget: {
+     backgroundColor: '#FFF',
+     borderRadius: 20,
+     padding: 6,
+     marginBottom: 24,
+     shadowColor: "#000",
+     shadowOffset: { width: 0, height: 2 },
+     shadowOpacity: 0.05,
+     shadowRadius: 8,
+     elevation: 2,
+  },
+  mapHeader: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 10, paddingTop: 10, paddingBottom: 10 },
+  widgetTitle: { fontSize: 14, fontWeight: '700', color: '#111' },
+  seeAllText: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
+  mapVisual: { height: 140, borderRadius: 16, overflow: 'hidden', position: 'relative' },
+  mapImg: { width: '100%', height: '100%' },
+  pulseMarker: { position: 'absolute', top: '50%', left: '50%', alignItems: 'center', justifyContent: 'center' },
+  pulseCore: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#3B82F6', zIndex: 2 },
+  pulseRing: { position: 'absolute', width: 30, height: 30, borderRadius: 15, backgroundColor: 'rgba(59, 130, 246, 0.3)' },
+  locBadge: { position: 'absolute', bottom: 10, left: 10, backgroundColor: 'rgba(255,255,255,0.9)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  locBadgeText: { fontSize: 11, fontWeight: '700', color: '#111' },
+
+  serviceCard: {
+      backgroundColor: '#1F2937',
+      borderRadius: 20,
+      padding: 20,
+      marginBottom: 30
+  },
+  serviceHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+  serviceIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#374151', justifyContent: 'center', alignItems: 'center' },
+  serviceTitle: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  serviceSub: { color: '#9CA3AF', fontSize: 12 },
+  divider: { height: 1, backgroundColor: '#374151', marginBottom: 16 },
+  serviceDetails: {},
+  specLabel: { fontSize: 10, color: '#9CA3AF', fontWeight: '700', marginBottom: 4, letterSpacing: 1 },
+  specText: { color: '#FFF', fontSize: 14, fontWeight: '600', marginBottom: 12 },
+  skillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  skillSimple: { color: '#D1D5DB', fontSize: 13 },
+
+  actionFooter: { alignItems: 'center', marginBottom: 60, marginTop: 10 },
+  socialRow: { flexDirection: 'row', gap: 16, marginBottom: 30 },
+  socialCircle: { 
+     width: 50, 
+     height: 50, 
+     borderRadius: 25, 
+     backgroundColor: '#FFF', 
+     justifyContent: 'center', 
+     alignItems: 'center',
+     shadowColor: "#000",
+     shadowOffset: { width: 0, height: 2 },
+     shadowOpacity: 0.05,
+     shadowRadius: 4,
+     elevation: 2,
+     borderWidth: 1,
+     borderColor: '#F3F4F6'
+  },
+  sosButton: { 
+     flexDirection: 'row', 
+     alignItems: 'center', 
+     gap: 8, 
+     backgroundColor: '#EF4444', 
+     paddingHorizontal: 30, 
+     paddingVertical: 16, 
+     borderRadius: 30, 
+     marginBottom: 16,
+     shadowColor: "#EF4444",
+     shadowOffset: { width: 0, height: 4 },
+     shadowOpacity: 0.3,
+     shadowRadius: 10,
+     elevation: 5
+  },
+  sosText: { color: '#FFF', fontWeight: '800', fontSize: 14, letterSpacing: 0.5 },
+  joinedText: { color: '#9CA3AF', fontSize: 12, fontWeight: '500' },
+
 });

@@ -105,7 +105,7 @@ export default function LoginScreen() {
         if (secret && userId) {
           await account.createSession(userId, secret);
           await SecureStore.setItemAsync('session_active', 'true');
-          router.replace('/(tabs)/convoy');
+          router.replace('/onboarding');
         } else {
            throw new Error("Login failed: missing secret in callback");
         }
