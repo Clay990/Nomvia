@@ -1,20 +1,21 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import React, { useState } from "react";
-import {
-  Image,
-  LayoutAnimation,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TouchableOpacity,
-  UIManager,
-  View,
-  Dimensions
-} from "react-native";
-import { useRouter } from "expo-router";
 import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useState } from "react";
+import {
+    ActivityIndicator,
+    Image,
+    LayoutAnimation,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TouchableOpacity,
+    UIManager,
+    View
+} from "react-native";
+import { account, APPWRITE_COLLECTION_USERS, APPWRITE_DB_ID, databases } from "../_appwrite";
 
 if (Platform.OS === 'android') {
   if (UIManager.setLayoutAnimationEnabledExperimental) {
@@ -22,52 +23,76 @@ if (Platform.OS === 'android') {
   }
 }
 
-const { width } = Dimensions.get('window');
-
-const USER = {
-  name: "Suraj Mondal",
-  age: 26,
-  role: "Builder",
-  verified: true,
-  avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop",
+const DEFAULT_USER = {
+  name: "Nomad",
+  age: 0,
+  role: "Explorer",
+  verified: false,
+  avatar: "https://images.unsplash.com/photo-1511367461989-f85a21fda167?q=80&w=400&auto=format&fit=crop",
   coverImage: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=800&auto=format&fit=crop",
-  location: "Ladakh, India",
-  bio: "Traveling full-time since 2019. Love mountains, slow mornings, and building apps from my van.",
-  snapshot: [
-    { label: "5y Road", icon: "road-variant" },
-    { label: "Slow Pace", icon: "tortoise" },
-    { label: "Nature", icon: "pine-tree" },
-    { label: "Pets", icon: "paw" }
-  ],
-  travelStyle: {
-    pace: "Slow & Steady",
-    mode: "Solo",
-    style: "Long Stays"
-  },
-  interests: ["Nature", "Coding", "Hiking", "Sci-Fi", "Coffee"],
-  rig: {
-    summary: "Sprinter 144 • Solar • Starlink",
-    name: "The Code Cruiser",
-    tech: ["400W Solar", "300Ah Lithium", "Starlink v2"],
-    image: "https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?q=80&w=800&auto=format&fit=crop"
-  },
-  skills: ["Solar Setup", "React Native", "Route Planning"],
-  isHelper: true,
-  builder: {
-    summary: "Experienced Builder • 8 vans built",
-    specialty: "Full Conversions & Electrical",
-    portfolio: "View Portfolio"
-  },
-  joined: "January 2024"
+  location: "On the Road",
+  bio: "Just started my journey...",
+  interests: [],
+  joined: "",
+  rigName: "My Rig",
+  rigSummary: "No vehicle details",
+  rigImage: "https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?q=80&w=800&auto=format&fit=crop",
+  skills: [],
+  isHelper: false,
 };
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
   const [rigExpanded, setRigExpanded] = useState(false);
-  const [helpExpanded, setHelpExpanded] = useState(false);
-  const [builderExpanded, setBuilderExpanded] = useState(false);
-  const [socialsExpanded, setSocialsExpanded] = useState(false);
-  const [isHappyToHelp, setIsHappyToHelp] = useState(USER.isHelper);
+  const [isHappyToHelp, setIsHappyToHelp] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchProfile();
+    }, [])
+  );
+
+  const fetchProfile = async () => {
+    try {
+      const user = await account.get();
+      const doc = await databases.getDocument(
+        APPWRITE_DB_ID,
+        APPWRITE_COLLECTION_USERS,
+        user.$id
+      );
+      
+      setUserProfile({
+        ...DEFAULT_USER,
+        ...doc,
+        name: doc.username || DEFAULT_USER.name,
+        rig: {
+            name: doc.rigName || DEFAULT_USER.rigName,
+            summary: doc.rigSummary || DEFAULT_USER.rigSummary,
+            image: doc.rigImage || DEFAULT_USER.rigImage,
+            tech: doc.rigTech || []
+        },
+        builder: {
+             summary: "Builder Profile",
+             specialty: "General",
+             portfolio: "No Portfolio"
+        },
+        snapshot: [
+            { label: doc.timeOnRoad || "0y", icon: "road-variant" },
+            { label: doc.pace || "Steady", icon: "tortoise" },
+            { label: doc.style || "Nature", icon: "pine-tree" },
+            { label: doc.mode || "Solo", icon: "paw" }
+        ]
+      });
+      setIsHappyToHelp(doc.isHelper || false);
+    } catch (error) {
+      console.error("Failed to fetch profile:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const toggleSection = (setter: any, value: boolean) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -78,11 +103,37 @@ export default function ProfileScreen() {
     alert("Emergency SOS Activated: Notifying nearby nomads and emergency contacts.");
   };
 
+  const handleHelperToggle = async (value: boolean) => {
+      setIsHappyToHelp(value);
+      try {
+          const user = await account.get();
+          await databases.updateDocument(
+              APPWRITE_DB_ID,
+              APPWRITE_COLLECTION_USERS,
+              user.$id,
+              { isHelper: value }
+          );
+      } catch (error) {
+          console.error("Failed to update helper status:", error);
+          setIsHappyToHelp(!value);
+      }
+  };
+
+  if (loading) {
+      return (
+          <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+              <ActivityIndicator size="large" color="#111" />
+          </View>
+      );
+  }
+
+  const DATA = userProfile || DEFAULT_USER;
+
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
         <View style={styles.headerWrapper}>
-          <Image source={{ uri: USER.coverImage }} style={styles.headerImage} />
+          <Image source={{ uri: DATA.coverImage || DEFAULT_USER.coverImage }} style={styles.headerImage} />
           <LinearGradient
             colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.6)', '#F8F9FA']}
             style={styles.headerGradient}
@@ -91,7 +142,7 @@ export default function ProfileScreen() {
           <View style={styles.topBar}>
              <View style={styles.locationTag}>
                 <MaterialCommunityIcons name="map-marker" size={14} color="#FFF" />
-                <Text style={styles.locationText}>{USER.location}</Text>
+                <Text style={styles.locationText}>{DATA.location || "Unknown"}</Text>
              </View>
              <View style={styles.headerIcons}>
                 <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/messages')}>
@@ -106,14 +157,14 @@ export default function ProfileScreen() {
 
           <View style={styles.identityOverlay}>
              <View style={styles.avatarRow}>
-                <Image source={{ uri: USER.avatar }} style={styles.avatar} />
+                <Image source={{ uri: DATA.avatar || DEFAULT_USER.avatar }} style={styles.avatar} />
                 <View style={styles.identityText}>
-                   <Text style={styles.heroName}>{USER.name}</Text>
+                   <Text style={styles.heroName}>{DATA.name}</Text>
                    <View style={styles.badgeRow}>
                       <View style={styles.roleBadge}>
-                         <Text style={styles.roleText}>{USER.role}</Text>
+                         <Text style={styles.roleText}>{DATA.role}</Text>
                       </View>
-                      {USER.verified && (
+                      {DATA.verified && (
                         <MaterialCommunityIcons name="check-decagram" size={20} color="#3B82F6" />
                       )}
                    </View>
@@ -124,7 +175,7 @@ export default function ProfileScreen() {
 
         <View style={styles.contentBody}>
             <View style={styles.statsGrid}>
-                {USER.snapshot.map((snap, i) => (
+                {DATA.snapshot && DATA.snapshot.map((snap: any, i: number) => (
                     <View key={i} style={styles.statItem}>
                         <View style={styles.statIconBox}>
                             <MaterialCommunityIcons name={snap.icon as any} size={20} color="#111" />
@@ -136,9 +187,9 @@ export default function ProfileScreen() {
 
             <View style={styles.cardSection}>
                 <Text style={styles.sectionTitle}>The Journey</Text>
-                <Text style={styles.bioText}>{USER.bio}</Text>
+                <Text style={styles.bioText}>{DATA.bio || "No bio yet."}</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tagsScroll}>
-                    {USER.interests.map(tag => (
+                    {DATA.interests && DATA.interests.map((tag: string) => (
                         <Text key={tag} style={styles.hashTag}>#{tag}</Text>
                     ))}
                 </ScrollView>
@@ -149,18 +200,18 @@ export default function ProfileScreen() {
                 onPress={() => toggleSection(setRigExpanded, rigExpanded)}
                 style={styles.rigCard}
             >
-                <Image source={{ uri: USER.rig.image }} style={styles.rigBg} />
+                <Image source={{ uri: DATA.rig.image }} style={styles.rigBg} />
                 <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.rigOverlay}>
                     <View>
                         <View style={styles.rigHeader}>
                             <MaterialCommunityIcons name="van-utility" size={24} color="#FFF" />
-                            <Text style={styles.rigTitle}>{USER.rig.name}</Text>
+                            <Text style={styles.rigTitle}>{DATA.rig.name}</Text>
                         </View>
-                        <Text style={styles.rigSub}>{USER.rig.summary}</Text>
+                        <Text style={styles.rigSub}>{DATA.rig.summary}</Text>
                         {rigExpanded && (
                             <View style={styles.rigExpandedContent}>
                                 <View style={styles.techStack}>
-                                    {USER.rig.tech.map(t => (
+                                    {DATA.rig.tech.map((t: string) => (
                                         <View key={t} style={styles.techPill}>
                                             <Text style={styles.techText}>{t}</Text>
                                         </View>
@@ -194,40 +245,41 @@ export default function ProfileScreen() {
                          <View style={styles.pulseRing} />
                     </View>
                     <View style={styles.locBadge}>
-                         <Text style={styles.locBadgeText}>{USER.location}</Text>
+                         <Text style={styles.locBadgeText}>{DATA.location || "Unknown"}</Text>
                     </View>
                 </View>
             </View>
 
-            {USER.role === "Builder" && (
-                <View style={styles.serviceCard}>
-                    <View style={styles.serviceHeader}>
-                        <View style={styles.serviceIcon}>
-                             <MaterialCommunityIcons name="hammer-wrench" size={20} color="#FFF" />
-                        </View>
-                        <View style={{flex: 1}}>
-                            <Text style={styles.serviceTitle}>Builder & Helper</Text>
-                            <Text style={styles.serviceSub}>Open to work</Text>
-                        </View>
-                        <Switch
-                            value={isHappyToHelp}
-                            onValueChange={setIsHappyToHelp}
-                            trackColor={{ false: "#E5E7EB", true: "#111" }}
-                            thumbColor="#FFF"
-                        />
+            <View style={styles.serviceCard}>
+                <View style={styles.serviceHeader}>
+                    <View style={styles.serviceIcon}>
+                            <MaterialCommunityIcons name="hammer-wrench" size={20} color="#FFF" />
                     </View>
-                    <View style={styles.divider} />
-                    <View style={styles.serviceDetails}>
-                         <Text style={styles.specLabel}>SPECIALTY</Text>
-                         <Text style={styles.specText}>{USER.builder.specialty}</Text>
-                         <View style={styles.skillsRow}>
-                            {USER.skills.map(skill => (
-                                <Text key={skill} style={styles.skillSimple}>• {skill}</Text>
-                            ))}
-                         </View>
+                    <View style={{flex: 1}}>
+                        <Text style={styles.serviceTitle}>Skills & Services</Text>
+                        <Text style={styles.serviceSub}>Open to work / help</Text>
                     </View>
+                    <Switch
+                        value={isHappyToHelp}
+                        onValueChange={handleHelperToggle}
+                        trackColor={{ false: "#E5E7EB", true: "#111" }}
+                        thumbColor="#FFF"
+                    />
                 </View>
-            )}
+                <View style={styles.divider} />
+                <View style={styles.serviceDetails}>
+                        <Text style={styles.specLabel}>SPECIALTY</Text>
+                        <Text style={styles.specText}>{DATA.builder.specialty}</Text>
+                        <View style={styles.skillsRow}>
+                        {DATA.skills && DATA.skills.map((skill: string) => (
+                            <Text key={skill} style={styles.skillSimple}>• {skill}</Text>
+                        ))}
+                        {(!DATA.skills || DATA.skills.length === 0) && (
+                            <Text style={styles.skillSimple}>No skills listed yet.</Text>
+                        )}
+                        </View>
+                </View>
+            </View>
 
             <View style={styles.actionFooter}>
                  <View style={styles.socialRow}>
@@ -247,7 +299,7 @@ export default function ProfileScreen() {
                     <Text style={styles.sosText}>Emergency SOS</Text>
                  </TouchableOpacity>
 
-                 <Text style={styles.joinedText}>Joined {USER.joined}</Text>
+                 <Text style={styles.joinedText}>Joined {DATA.joined ? new Date(DATA.joined).toLocaleDateString() : "Recently"}</Text>
             </View>
 
         </View>
@@ -258,7 +310,7 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8F9FA' },
-  headerWrapper: { height: 380, position: 'relative' },
+  headerWrapper: { height: 280, position: 'relative' },
   headerImage: { width: '100%', height: '100%', resizeMode: 'cover' },
   headerGradient: { position: 'absolute', width: '100%', height: '100%', top: 0 },
   
@@ -318,7 +370,6 @@ const styles = StyleSheet.create({
      borderRadius: 20, 
      borderWidth: 4, 
      borderColor: '#FFF',
-     transform: [{ rotate: '-3deg' }] 
   },
   identityText: { flex: 1, paddingBottom: 8 },
   heroName: { fontSize: 32, fontWeight: '900', color: '#111', letterSpacing: -1, textShadowColor: 'rgba(255,255,255,0.5)', textShadowRadius: 10 },

@@ -63,9 +63,10 @@ export default function SettingsScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         
+        {/* Account Section */}
         <View style={styles.section}>
             <Text style={styles.sectionTitle}>Account</Text>
-            <TouchableOpacity style={styles.row}>
+            <TouchableOpacity style={styles.row} onPress={() => router.push('/edit-profile')}>
                 <View style={styles.rowLeft}>
                     <MaterialCommunityIcons name="account-edit-outline" size={22} color="#4B5563" />
                     <Text style={styles.rowLabel}>Edit Profile</Text>
