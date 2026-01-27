@@ -63,16 +63,16 @@ const RigCard: React.FC<RigCardProps> = ({ rig }) => {
 
 const styles = StyleSheet.create({
   rigCard: {
-     minHeight: 220, // changed to minHeight to accommodate expansion
+     minHeight: 220, 
      borderRadius: 24,
      overflow: 'hidden',
      marginBottom: 24,
      backgroundColor: '#000',
      position: 'relative'
   },
-  rigBg: { width: '100%', height: '100%', position: 'absolute' }, // Absolute to cover
+  rigBg: { width: '100%', height: '100%', position: 'absolute' },
   rigOverlay: { 
-     flex: 1, // fill container
+     flex: 1, 
      justifyContent: 'space-between',
      padding: 20,
      minHeight: 220

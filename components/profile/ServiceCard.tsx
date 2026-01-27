@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Switch } from 'react-native';
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { account, databases, APPWRITE_DB_ID, APPWRITE_COLLECTION_USERS } from '../../app/_appwrite'; // Adjusted path
+import { account, databases, APPWRITE_DB_ID, APPWRITE_COLLECTION_USERS } from '../../app/_appwrite'; 
 
 interface ServiceCardProps {
   initialIsHelper: boolean;
@@ -25,7 +25,6 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ initialIsHelper, builder, ski
       } catch (error) {
           console.error("Failed to update helper status:", error);
           setIsHappyToHelp(!value);
-          // Ideally show a toast or alert here, but keeping it simple for component
       }
   };
 

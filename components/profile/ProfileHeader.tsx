@@ -78,7 +78,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user, defaultUser }) => {
 
 const styles = StyleSheet.create({
   headerWrapper: { height: 280, position: 'relative' },
-  headerImage: { width: '100%', height: '100%' }, // resizeMode handled by SafeImage/Image default or style prop? SafeImage uses absoluteFill so it covers.
+  headerImage: { width: '100%', height: '100%' }, 
   headerGradient: { position: 'absolute', width: '100%', height: '100%', top: 0 },
   
   topBar: {

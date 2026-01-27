@@ -41,7 +41,7 @@ const SafeImage: React.FC<SafeImageProps> = ({ source, style, fallbackSource, ..
 const styles = StyleSheet.create({
   container: {
     overflow: 'hidden',
-    backgroundColor: '#E5E7EB', // Placeholder color
+    backgroundColor: '#E5E7EB', 
   },
   loadingContainer: {
     ...StyleSheet.absoluteFillObject,
