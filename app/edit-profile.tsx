@@ -1,23 +1,23 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
-import { ID } from "react-native-appwrite";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { account, APPWRITE_BUCKET_ID, APPWRITE_COLLECTION_USERS, APPWRITE_DB_ID, databases, storage } from "./_appwrite";
+import * as ImagePicker from 'expo-image-picker';
+import { account, databases, storage, APPWRITE_DB_ID, APPWRITE_COLLECTION_USERS, APPWRITE_BUCKET_ID } from "./_appwrite";
+import { ID } from "react-native-appwrite";
 
 const ROLES = ["Nomad", "Builder", "Explorer", "Weekend Warrior"];
 const PACES = ["Fast", "Steady", "Slow"];
@@ -103,14 +103,14 @@ export default function EditProfileScreen() {
   };
 
   const uploadImage = async (uri: string) => {
-    if (!uri || uri.startsWith('http')) return uri;
+    if (!uri || uri.startsWith('http')) return uri; // Already a URL
     try {
         const fileId = ID.unique();
         const file = {
             name: `${fileId}.jpg`,
             type: "image/jpeg",
             uri: uri,
-            size: 1,
+            size: 1, // Satisfy TS
         };
 
         const uploaded = await storage.createFile(APPWRITE_BUCKET_ID, fileId, file);
@@ -124,12 +124,15 @@ export default function EditProfileScreen() {
   const handleSave = async () => {
     setSaving(true);
     try {
+        // Upload images if changed
         const avatarUrl = await uploadImage(formData.avatar || "");
         const coverUrl = await uploadImage(formData.coverImage || "");
         const rigUrl = await uploadImage(formData.rigImage || "");
 
+        // Process skills
         const skillsArray = formData.skills.split(",").map(s => s.trim()).filter(s => s.length > 0);
 
+        // Sanitize URLs (empty string -> null)
         const sanitizeUrl = (url: string | null) => url && url.trim().length > 0 ? url : null;
 
         await databases.updateDocument(
