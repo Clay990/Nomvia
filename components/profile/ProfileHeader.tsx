@@ -22,7 +22,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user, defaultUser }) => {
         resizeMode="cover"
       />
       <LinearGradient
-        colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.6)', '#F8F9FA']}
+        colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.4)', '#F9FAFB']}
+        locations={[0, 0.6, 1]}
         style={styles.headerGradient}
       />
       
@@ -77,13 +78,13 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user, defaultUser }) => {
 };
 
 const styles = StyleSheet.create({
-  headerWrapper: { height: 280, position: 'relative' },
+  headerWrapper: { height: 320, position: 'relative' }, 
   headerImage: { width: '100%', height: '100%' }, 
   headerGradient: { position: 'absolute', width: '100%', height: '100%', top: 0 },
   
   topBar: {
      position: 'absolute',
-     top: 50,
+     top: 60,
      left: 20,
      right: 20,
      flexDirection: 'row',
@@ -94,19 +95,22 @@ const styles = StyleSheet.create({
   locationTag: {
      flexDirection: 'row',
      alignItems: 'center',
-     backgroundColor: 'rgba(0,0,0,0.5)',
+     backgroundColor: 'rgba(255, 255, 255, 0.2)', 
+     backdropFilter: 'blur(10px)',
      paddingHorizontal: 12,
      paddingVertical: 6,
      borderRadius: 20,
-     gap: 4
+     gap: 4,
+     borderWidth: 1,
+     borderColor: 'rgba(255,255,255,0.3)'
   },
   locationText: { color: '#FFF', fontSize: 12, fontWeight: '600' },
   headerIcons: { flexDirection: 'row', gap: 10 },
   iconButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
@@ -126,24 +130,24 @@ const styles = StyleSheet.create({
 
   identityOverlay: {
     position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
+    bottom: 24,
+    left: 24,
+    right: 24,
   },
   avatarRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 16 },
   avatar: { 
-     width: 100, 
-     height: 100, 
-     borderRadius: 20, 
+     width: 90, 
+     height: 90, 
+     borderRadius: 28, 
      borderWidth: 4, 
-     borderColor: '#FFF',
-     backgroundColor: '#DDD'
+     borderColor: '#FFFFFF',
+     backgroundColor: '#F3F4F6'
   },
-  identityText: { flex: 1, paddingBottom: 8 },
-  heroName: { fontSize: 32, fontWeight: '900', color: '#111', letterSpacing: -1, textShadowColor: 'rgba(255,255,255,0.5)', textShadowRadius: 10 },
-  badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  roleBadge: { backgroundColor: '#111', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
-  roleText: { color: '#FFF', fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
+  identityText: { flex: 1, paddingBottom: 6 },
+  heroName: { fontSize: 32, fontWeight: '800', color: '#111827', letterSpacing: -0.5 },
+  badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+  roleBadge: { backgroundColor: '#1F2937', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  roleText: { color: '#FFF', fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
 });
 
 export default ProfileHeader;

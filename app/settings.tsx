@@ -1,4 +1,4 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import * as SecureStore from 'expo-secure-store';
 import React, { useState } from "react";
@@ -12,14 +12,17 @@ import {
   View
 } from "react-native";
 import { account } from "./_appwrite";
+import { useTheme } from "../context/ThemeContext";
 
 const ACCOUNT_CREATED = "January 2024"; 
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { isDark, toggleTheme, colors } = useTheme();
   const [pushEnabled, setPushEnabled] = useState(true);
   const [locationEnabled, setLocationEnabled] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
+
+  const styles = getStyles(colors, isDark);
 
   const handleLogout = async () => {
     Alert.alert(
@@ -37,7 +40,6 @@ export default function SettingsScreen() {
               router.replace('/login');
             } catch (error) {
               console.error("Logout failed:", error);
-              // Force logout even if API fails
               await SecureStore.deleteItemAsync('session_active');
               router.replace('/login');
             }
@@ -47,15 +49,11 @@ export default function SettingsScreen() {
     );
   };
 
-  const handleSOS = () => {
-      Alert.alert("Emergency SOS", "This will alert nearby nomads and emergency contacts. (Demo Only)");
-  };
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color="#111" />
+          <Feather name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Settings</Text>
         <View style={{width: 32}} /> 
@@ -68,18 +66,18 @@ export default function SettingsScreen() {
             <Text style={styles.sectionTitle}>Account</Text>
             <TouchableOpacity style={styles.row} onPress={() => router.push('/edit-profile')}>
                 <View style={styles.rowLeft}>
-                    <MaterialCommunityIcons name="account-edit-outline" size={22} color="#4B5563" />
+                    <Feather name="user" size={22} color={colors.icon} />
                     <Text style={styles.rowLabel}>Edit Profile</Text>
                 </View>
-                <MaterialCommunityIcons name="chevron-right" size={20} color="#9CA3AF" />
+                <Feather name="chevron-right" size={20} color={colors.subtext} />
             </TouchableOpacity>
              <View style={styles.divider} />
             <TouchableOpacity style={styles.row}>
                 <View style={styles.rowLeft}>
-                    <MaterialCommunityIcons name="shield-check-outline" size={22} color="#4B5563" />
+                    <Feather name="shield" size={22} color={colors.icon} />
                     <Text style={styles.rowLabel}>Privacy & Security</Text>
                 </View>
-                <MaterialCommunityIcons name="chevron-right" size={20} color="#9CA3AF" />
+                <Feather name="chevron-right" size={20} color={colors.subtext} />
             </TouchableOpacity>
         </View>
 
@@ -87,39 +85,39 @@ export default function SettingsScreen() {
             <Text style={styles.sectionTitle}>Preferences</Text>
             <View style={styles.row}>
                 <View style={styles.rowLeft}>
-                    <MaterialCommunityIcons name="bell-outline" size={22} color="#4B5563" />
+                    <Feather name="bell" size={22} color={colors.icon} />
                     <Text style={styles.rowLabel}>Push Notifications</Text>
                 </View>
                 <Switch 
                     value={pushEnabled} 
                     onValueChange={setPushEnabled}
-                    trackColor={{ false: "#E5E7EB", true: "#111" }}
+                    trackColor={{ false: colors.border, true: colors.primary }}
                     thumbColor="#FFF"
                 />
             </View>
             <View style={styles.divider} />
             <View style={styles.row}>
                 <View style={styles.rowLeft}>
-                    <MaterialCommunityIcons name="map-marker-outline" size={22} color="#4B5563" />
+                    <Feather name="map-pin" size={22} color={colors.icon} />
                     <Text style={styles.rowLabel}>Share Location</Text>
                 </View>
                  <Switch 
                     value={locationEnabled} 
                     onValueChange={setLocationEnabled}
-                    trackColor={{ false: "#E5E7EB", true: "#111" }}
+                    trackColor={{ false: colors.border, true: colors.primary }}
                     thumbColor="#FFF"
                 />
             </View>
              <View style={styles.divider} />
             <View style={styles.row}>
                 <View style={styles.rowLeft}>
-                    <MaterialCommunityIcons name="theme-light-dark" size={22} color="#4B5563" />
+                    <Feather name={isDark ? "sun" : "moon"} size={22} color={colors.icon} />
                     <Text style={styles.rowLabel}>Dark Mode</Text>
                 </View>
                  <Switch 
-                    value={darkMode} 
-                    onValueChange={setDarkMode}
-                    trackColor={{ false: "#E5E7EB", true: "#111" }}
+                    value={isDark} 
+                    onValueChange={toggleTheme}
+                    trackColor={{ false: colors.border, true: colors.primary }}
                     thumbColor="#FFF"
                 />
             </View>
@@ -129,18 +127,18 @@ export default function SettingsScreen() {
              <Text style={styles.sectionTitle}>Support</Text>
              <TouchableOpacity style={styles.row}>
                 <View style={styles.rowLeft}>
-                    <MaterialCommunityIcons name="help-circle-outline" size={22} color="#4B5563" />
+                    <Feather name="help-circle" size={22} color={colors.icon} />
                     <Text style={styles.rowLabel}>Help Center</Text>
                 </View>
-                <MaterialCommunityIcons name="chevron-right" size={20} color="#9CA3AF" />
+                <Feather name="chevron-right" size={20} color={colors.subtext} />
             </TouchableOpacity>
             <View style={styles.divider} />
              <TouchableOpacity style={styles.row}>
                 <View style={styles.rowLeft}>
-                    <MaterialCommunityIcons name="file-document-outline" size={22} color="#4B5563" />
+                    <Feather name="file-text" size={22} color={colors.icon} />
                     <Text style={styles.rowLabel}>Terms of Service</Text>
                 </View>
-                <MaterialCommunityIcons name="chevron-right" size={20} color="#9CA3AF" />
+                <Feather name="chevron-right" size={20} color={colors.subtext} />
             </TouchableOpacity>
         </View>
 
@@ -160,8 +158,8 @@ export default function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -169,28 +167,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 20,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.card,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.border,
   },
   backBtn: { padding: 4 },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#111' },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
   scrollContent: { padding: 20 },
   section: {
-    backgroundColor: '#FFF',
+    backgroundColor: colors.card,
     borderRadius: 16,
     paddingHorizontal: 16,
     marginBottom: 24,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: isDark ? 0.3 : 0.05,
     shadowRadius: 4,
     elevation: 2,
+    borderWidth: isDark ? 1 : 0,
+    borderColor: colors.border,
   },
   sectionTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#9CA3AF',
+    color: colors.subtext,
     marginTop: 16,
     marginBottom: 8,
     textTransform: 'uppercase',
@@ -203,22 +203,22 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   rowLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  rowLabel: { fontSize: 15, fontWeight: '600', color: '#111' },
-  divider: { height: 1, backgroundColor: '#F3F4F6' },
+  rowLabel: { fontSize: 15, fontWeight: '600', color: colors.text },
+  divider: { height: 1, backgroundColor: colors.border },
   
   footer: { alignItems: 'center', marginTop: 10, paddingBottom: 40 },
   logoutBtn: {
     width: '100%',
     paddingVertical: 16,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.card,
     borderRadius: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     marginBottom: 24,
   },
-  logoutText: { color: '#EF4444', fontWeight: '700', fontSize: 15 },
+  logoutText: { color: colors.danger, fontWeight: '700', fontSize: 15 },
   
   metaInfo: { alignItems: 'center', gap: 4 },
-  metaText: { fontSize: 12, color: '#9CA3AF' },
+  metaText: { fontSize: 12, color: colors.subtext },
 });

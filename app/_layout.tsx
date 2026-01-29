@@ -1,30 +1,36 @@
 import { Stack } from "expo-router";
 import { View } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { PaperProvider, MD3LightTheme } from 'react-native-paper';
+import { PaperProvider, MD3LightTheme, MD3DarkTheme } from 'react-native-paper';
 import * as SplashScreen from 'expo-splash-screen';
-
+import { ThemeProvider, useTheme } from '../context/ThemeContext';
+import { useFonts, YoungSerif_400Regular } from '@expo-google-fonts/young-serif';
+import { Inter_400Regular, Inter_600SemiBold } from '@expo-google-fonts/inter';
+import { useEffect } from "react";
 
 SplashScreen.preventAutoHideAsync();
 
-const theme = {
-  ...MD3LightTheme,
-  colors: {
-    ...MD3LightTheme.colors,
-    primary: '#000000',
-    secondary: '#111111',
-    background: '#FFFFFF',
-  },
-};
+function AppContent() {
+  const { isDark, colors } = useTheme();
 
-export default function RootLayout() {
+  const paperTheme = {
+    ...(isDark ? MD3DarkTheme : MD3LightTheme),
+    colors: {
+      ...(isDark ? MD3DarkTheme.colors : MD3LightTheme.colors),
+      primary: colors.primary,
+      background: colors.background,
+      surface: colors.card,
+    },
+  };
+
   return (
-    <PaperProvider theme={theme}>
-      <View style={{ flex: 1 }}>
-        <StatusBar style="dark" />
+    <PaperProvider theme={paperTheme}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <StatusBar style={isDark ? "light" : "dark"} />
         <Stack screenOptions={{ 
           headerShown: false,
-          animation: 'slide_from_right' 
+          animation: 'slide_from_right',
+          contentStyle: { backgroundColor: colors.background }
         }}>
           <Stack.Screen name="index" />
           <Stack.Screen name="signup" />
@@ -36,5 +42,29 @@ export default function RootLayout() {
         </Stack>
       </View>
     </PaperProvider>
+  );
+}
+
+export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    YoungSerif_400Regular,
+    Inter_400Regular,
+    Inter_600SemiBold,
+  });
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }

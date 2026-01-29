@@ -1,7 +1,8 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
 import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useTheme } from "../../context/ThemeContext";
 
 const MOCK_CHATS = [
   {
@@ -32,6 +33,8 @@ const MOCK_CHATS = [
 
 export default function MessagesListScreen() {
   const router = useRouter();
+  const { colors, isDark } = useTheme();
+  const styles = getStyles(colors, isDark);
 
   const renderItem = ({ item }: { item: typeof MOCK_CHATS[0] }) => (
     <TouchableOpacity 
@@ -59,11 +62,11 @@ export default function MessagesListScreen() {
     <View style={styles.container}>
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#111" />
+            <Feather name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.title}>Messages</Text>
         <TouchableOpacity style={styles.iconBtn}>
-            <MaterialCommunityIcons name="pencil-plus-outline" size={24} color="#111" />
+            <Feather name="edit" size={24} color={colors.text} />
         </TouchableOpacity>
       </View>
       <FlatList
@@ -77,8 +80,8 @@ export default function MessagesListScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFF' },
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -87,26 +90,28 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.border,
+    backgroundColor: colors.card,
   },
   backBtn: { padding: 4 },
   iconBtn: { padding: 4 },
-  title: { fontSize: 18, fontWeight: '700', color: '#111' },
+  title: { fontSize: 18, fontWeight: '700', color: colors.text },
   listContent: { paddingVertical: 10 },
   chatItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
+    backgroundColor: colors.card,
   },
-  avatar: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#F3F4F6' },
+  avatar: { width: 50, height: 50, borderRadius: 25, backgroundColor: colors.secondary },
   content: { flex: 1, marginLeft: 16, justifyContent: 'center' },
   header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  name: { fontSize: 16, fontWeight: '700', color: '#111' },
-  time: { fontSize: 12, color: '#9CA3AF' },
-  message: { fontSize: 14, color: '#6B7280' },
+  name: { fontSize: 16, fontWeight: '700', color: colors.text },
+  time: { fontSize: 12, color: colors.subtext },
+  message: { fontSize: 14, color: colors.subtext },
   badge: {
-    backgroundColor: '#EF4444',
+    backgroundColor: colors.primary,
     width: 20,
     height: 20,
     borderRadius: 10,
@@ -115,5 +120,5 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   badgeText: { color: '#FFF', fontSize: 10, fontWeight: '700' },
-  separator: { height: 1, backgroundColor: '#F3F4F6', marginLeft: 86 },
+  separator: { height: 1, backgroundColor: colors.border, marginLeft: 86 },
 });

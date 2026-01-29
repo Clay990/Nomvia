@@ -1,17 +1,17 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View
 } from "react-native";
+import { useTheme } from "../../context/ThemeContext";
 
 const getMockMessages = (id: string) => [
   { id: '1', text: "Hey! Are you still at the campsite?", sender: 'them', time: '10:30 AM' },
@@ -23,6 +23,9 @@ const getMockMessages = (id: string) => [
 export default function ChatScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
+  const { colors, isDark } = useTheme();
+  const styles = getStyles(colors, isDark);
+  
   const [messages, setMessages] = useState(getMockMessages(id as string));
   const [inputText, setInputText] = useState("");
 
@@ -58,14 +61,14 @@ export default function ChatScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color="#111" />
+          <Feather name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.headerTitleContainer}>
             <Text style={styles.headerName}>David</Text>
             <Text style={styles.headerStatus}>Online</Text>
         </View>
         <TouchableOpacity>
-          <MaterialCommunityIcons name="dots-vertical" size={24} color="#111" />
+          <Feather name="more-vertical" size={24} color={colors.text} />
         </TouchableOpacity>
       </View>
 
@@ -83,12 +86,12 @@ export default function ChatScreen() {
       >
         <View style={styles.inputContainer}>
           <TouchableOpacity style={styles.attachBtn}>
-            <MaterialCommunityIcons name="plus" size={24} color="#6B7280" />
+            <Feather name="plus" size={24} color={colors.subtext} />
           </TouchableOpacity>
           <TextInput
             style={styles.input}
             placeholder="Message..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.subtext}
             value={inputText}
             onChangeText={setInputText}
             multiline
@@ -98,7 +101,7 @@ export default function ChatScreen() {
             onPress={sendMessage}
             disabled={!inputText.trim()}
           >
-            <MaterialCommunityIcons name="send" size={20} color="#FFF" />
+            <Feather name="send" size={20} color={isDark ? "#000" : "#FFF"} />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -106,8 +109,8 @@ export default function ChatScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFF' },
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -115,12 +118,12 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-    backgroundColor: '#FFF',
+    borderBottomColor: colors.border,
+    backgroundColor: colors.card,
   },
   backBtn: { padding: 8, marginRight: 8 },
   headerTitleContainer: { flex: 1 },
-  headerName: { fontSize: 16, fontWeight: '700', color: '#111' },
+  headerName: { fontSize: 16, fontWeight: '700', color: colors.text },
   headerStatus: { fontSize: 12, color: '#10B981', fontWeight: '500' },
   listContent: { padding: 16, paddingBottom: 20 },
   messageBubble: {
@@ -131,47 +134,52 @@ const styles = StyleSheet.create({
   },
   myBubble: {
     alignSelf: 'flex-end',
-    backgroundColor: '#111',
+    backgroundColor: colors.primary,
     borderBottomRightRadius: 4,
   },
   theirBubble: {
     alignSelf: 'flex-start',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderBottomLeftRadius: 4,
   },
   messageText: { fontSize: 15, lineHeight: 20 },
-  myText: { color: '#FFF' },
-  theirText: { color: '#111' },
+  myText: { color: isDark ? '#000' : '#FFF' },
+  theirText: { color: colors.text },
   timeText: { fontSize: 10, marginTop: 4, alignSelf: 'flex-end' },
-  myTime: { color: 'rgba(255,255,255,0.6)' },
-  theirTime: { color: '#9CA3AF' },
+  myTime: { color: isDark ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.7)' },
+  theirTime: { color: colors.subtext },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
     paddingBottom: 30, 
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-    backgroundColor: '#FFF',
+    borderTopColor: colors.border,
+    backgroundColor: colors.card,
   },
   attachBtn: { padding: 8 },
   input: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.background,
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
     marginHorizontal: 8,
     maxHeight: 100,
     fontSize: 15,
+    color: colors.text,
+    borderWidth: 1,
+    borderColor: colors.border
   },
   sendBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#111',
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  sendBtnDisabled: { backgroundColor: '#E5E7EB' },
+  sendBtnDisabled: { backgroundColor: colors.border },
 });

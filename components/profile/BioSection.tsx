@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
 
 interface BioSectionProps {
   bio: string;
@@ -7,6 +8,9 @@ interface BioSectionProps {
 }
 
 const BioSection: React.FC<BioSectionProps> = ({ bio, interests }) => {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
+
   return (
     <View style={styles.cardSection}>
         <Text style={styles.sectionTitle}>The Journey</Text>
@@ -20,12 +24,12 @@ const BioSection: React.FC<BioSectionProps> = ({ bio, interests }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   cardSection: { marginBottom: 24 },
-  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#111', marginBottom: 8 },
-  bioText: { fontSize: 15, color: '#4B5563', lineHeight: 24, marginBottom: 12 },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: colors.text, marginBottom: 8 },
+  bioText: { fontSize: 15, fontFamily: 'Inter_400Regular', color: colors.subtext, lineHeight: 24, marginBottom: 12 },
   tagsScroll: { flexDirection: 'row' },
-  hashTag: { fontSize: 13, fontWeight: '600', color: '#3B82F6', marginRight: 12 },
+  hashTag: { fontSize: 13, fontWeight: '600', color: colors.primary, marginRight: 12 },
 });
 
 export default BioSection;

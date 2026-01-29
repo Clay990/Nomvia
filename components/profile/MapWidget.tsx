@@ -1,12 +1,17 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import SafeImage from '../SafeImage';
+import { useTheme } from '../../context/ThemeContext';
 
 interface MapWidgetProps {
   location: string;
 }
 
 const MapWidget: React.FC<MapWidgetProps> = ({ location }) => {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
+
   return (
     <View style={styles.mapWidget}>
         <View style={styles.mapHeader}>
@@ -19,41 +24,52 @@ const MapWidget: React.FC<MapWidgetProps> = ({ location }) => {
             <SafeImage 
                 source={{ uri: "https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=800&auto=format&fit=crop" }} 
                 style={styles.mapImg}
+                resizeMode="cover"
             />
-            <View style={styles.pulseMarker}>
-                 <View style={styles.pulseCore} />
-                 <View style={styles.pulseRing} />
-            </View>
-            <View style={styles.locBadge}>
-                 <Text style={styles.locBadgeText}>{location || "Unknown"}</Text>
+            
+            <View style={styles.glassMarker}>
+                 <MaterialCommunityIcons name="map-marker" size={24} color="#EF4444" />
+                 <Text style={styles.markerText}>{location || "Unknown"}</Text>
             </View>
         </View>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   mapWidget: {
-     backgroundColor: '#FFF',
-     borderRadius: 20,
-     padding: 6,
+     backgroundColor: colors.card,
+     borderRadius: 24,
+     padding: 8,
      marginBottom: 24,
-     shadowColor: "#000",
-     shadowOffset: { width: 0, height: 2 },
-     shadowOpacity: 0.05,
-     shadowRadius: 8,
-     elevation: 2,
+     borderWidth: 1,
+     borderColor: colors.border,
   },
-  mapHeader: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 10, paddingTop: 10, paddingBottom: 10 },
-  widgetTitle: { fontSize: 14, fontWeight: '700', color: '#111' },
-  seeAllText: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
-  mapVisual: { height: 140, borderRadius: 16, overflow: 'hidden', position: 'relative' },
+  mapHeader: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 8, paddingBottom: 12, paddingTop: 4 },
+  widgetTitle: { fontSize: 15, fontWeight: '700', color: colors.text },
+  seeAllText: { fontSize: 13, fontWeight: '600', color: colors.primary },
+  
+  mapVisual: { height: 160, borderRadius: 20, overflow: 'hidden', position: 'relative', justifyContent: 'center', alignItems: 'center' },
   mapImg: { width: '100%', height: '100%' },
-  pulseMarker: { position: 'absolute', top: '50%', left: '50%', alignItems: 'center', justifyContent: 'center' },
-  pulseCore: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#3B82F6', zIndex: 2 },
-  pulseRing: { position: 'absolute', width: 30, height: 30, borderRadius: 15, backgroundColor: 'rgba(59, 130, 246, 0.3)' },
-  locBadge: { position: 'absolute', bottom: 10, left: 10, backgroundColor: 'rgba(255,255,255,0.9)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  locBadgeText: { fontSize: 11, fontWeight: '700', color: '#111' },
+
+  glassMarker: {
+      position: 'absolute',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: 'rgba(0, 0, 0, 0.6)', 
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.2)',
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 4,
+  },
+  markerText: { fontSize: 13, fontWeight: '700', color: '#FFF' } 
 });
 
 export default MapWidget;

@@ -1,12 +1,16 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useTheme } from '../../context/ThemeContext';
 
 interface ActionFooterProps {
   joinedDate: string;
 }
 
 const ActionFooter: React.FC<ActionFooterProps> = ({ joinedDate }) => {
+  const { colors, isDark } = useTheme();
+  const styles = getStyles(colors, isDark);
+
   const handleSOS = () => {
     Alert.alert(
         "Emergency SOS",
@@ -22,13 +26,13 @@ const ActionFooter: React.FC<ActionFooterProps> = ({ joinedDate }) => {
     <View style={styles.actionFooter}>
          <View style={styles.socialRow}>
              <TouchableOpacity style={styles.socialCircle} accessibilityLabel="Instagram" accessibilityRole="button">
-                <MaterialCommunityIcons name="instagram" size={20} color="#111" />
+                <MaterialCommunityIcons name="instagram" size={20} color={colors.text} />
              </TouchableOpacity>
              <TouchableOpacity style={styles.socialCircle} accessibilityLabel="YouTube" accessibilityRole="button">
-                <MaterialCommunityIcons name="youtube" size={20} color="#111" />
+                <MaterialCommunityIcons name="youtube" size={20} color={colors.text} />
              </TouchableOpacity>
              <TouchableOpacity style={styles.socialCircle} accessibilityLabel="Website" accessibilityRole="button">
-                <MaterialCommunityIcons name="web" size={20} color="#111" />
+                <MaterialCommunityIcons name="web" size={20} color={colors.text} />
              </TouchableOpacity>
          </View>
 
@@ -48,23 +52,23 @@ const ActionFooter: React.FC<ActionFooterProps> = ({ joinedDate }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  actionFooter: { alignItems: 'center', marginBottom: 60, marginTop: 10 },
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
+  actionFooter: { alignItems: 'center', marginBottom: 0, marginTop: 10 },
   socialRow: { flexDirection: 'row', gap: 16, marginBottom: 30 },
   socialCircle: { 
      width: 50, 
      height: 50, 
      borderRadius: 25, 
-     backgroundColor: '#FFF', 
+     backgroundColor: colors.card, 
      justifyContent: 'center', 
      alignItems: 'center',
      shadowColor: "#000",
      shadowOffset: { width: 0, height: 2 },
-     shadowOpacity: 0.05,
+     shadowOpacity: isDark ? 0.1 : 0.05,
      shadowRadius: 4,
      elevation: 2,
      borderWidth: 1,
-     borderColor: '#F3F4F6'
+     borderColor: colors.border
   },
   sosButton: { 
      flexDirection: 'row', 
@@ -82,7 +86,7 @@ const styles = StyleSheet.create({
      elevation: 5
   },
   sosText: { color: '#FFF', fontWeight: '800', fontSize: 14, letterSpacing: 0.5 },
-  joinedText: { color: '#9CA3AF', fontSize: 12, fontWeight: '500' },
+  joinedText: { color: colors.subtext, fontSize: 12, fontWeight: '500' },
 });
 
 export default ActionFooter;
