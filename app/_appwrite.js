@@ -1,5 +1,7 @@
 import { Client, Account, Databases, Storage } from 'react-native-appwrite';
-
+// NOTE: This Project ID is for the public Demo/Hackathon environment only.
+// It is restricted to the 'com.nomvia.app' bundle signature.
+// Do not use for production data.
 export const APPWRITE_ENDPOINT = 'https://cloud.appwrite.io/v1';
 export const APPWRITE_PROJECT_ID = '6973457f000e977ae601';
 export const APPWRITE_DB_ID = 'nomvia_db';
