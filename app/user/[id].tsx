@@ -1,9 +1,7 @@
 import { Feather } from "@expo/vector-icons";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useRef, useState } from "react";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Animated,
@@ -18,7 +16,7 @@ import {
 } from "react-native";
 import { ID, Query } from 'react-native-appwrite';
 import { useTheme } from "../../context/ThemeContext";
-import { account, APPWRITE_COLLECTION_USERS, APPWRITE_COLLECTION_FOLLOWERS, APPWRITE_COLLECTION_POSTS, APPWRITE_DB_ID, databases } from "../../lib/appwrite";
+import { account, APPWRITE_COLLECTION_FOLLOWERS, APPWRITE_COLLECTION_POSTS, APPWRITE_COLLECTION_USERS, APPWRITE_DB_ID, databases } from "../../lib/appwrite";
 
 import SafeImage from '../../components/SafeImage';
 import ActionFooter from '../../components/profile/ActionFooter';
@@ -35,8 +33,6 @@ if (Platform.OS === 'android') {
     UIManager.setLayoutAnimationEnabledExperimental(true);
   }
 }
-
-const PROFILE_CACHE_KEY = 'cached_user_profile';
 
 type SnapshotItem = { label: string; icon: string };
 
@@ -67,30 +63,41 @@ const DEFAULT_USER = {
   }
 };
 
-export default function ProfileScreen() {
+export default function UserProfileScreen() {
+  const { id } = useLocalSearchParams();
   const router = useRouter();
   const { colors, isDark } = useTheme();
   const styles = getStyles(colors, isDark);
   
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isCurrentUser, setIsCurrentUser] = useState(false);
   const [activeTab, setActiveTab] = useState('Overview');
+  
+  const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [postCount, setPostCount] = useState(0);
+  const [followDocId, setFollowDocId] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   
   const scrollY = useRef(new Animated.Value(0)).current;
 
+  useEffect(() => {
+    fetchProfile();
+  }, [id]);
+
   const fetchProfile = async () => {
     try {
-      const cached = await AsyncStorage.getItem(PROFILE_CACHE_KEY);
-      if (cached) {
-          setUserProfile(JSON.parse(cached));
-          setLoading(false);
-      }
+      setLoading(true);
+      const currentAccount = await account.get();
+      setCurrentUserId(currentAccount.$id);
       
-      const user = await account.get();
-      const doc = await databases.getDocument(APPWRITE_DB_ID, APPWRITE_COLLECTION_USERS, user.$id);
+      if (currentAccount.$id === id) {
+          setIsCurrentUser(true);
+      }
+
+      const doc = await databases.getDocument(APPWRITE_DB_ID, APPWRITE_COLLECTION_USERS, id as string);
       
       const profileData = { ...DEFAULT_USER, ...doc, name: doc.username || DEFAULT_USER.name };
       
@@ -105,28 +112,46 @@ export default function ProfileScreen() {
       ] as SnapshotItem[];
 
       setUserProfile(profileData);
-      await AsyncStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profileData));
 
       const followersRes = await databases.listDocuments(
           APPWRITE_DB_ID, 
           APPWRITE_COLLECTION_FOLLOWERS, 
-          [Query.equal('followingId', user.$id)]
+          [Query.equal('followingId', id as string)]
       );
       setFollowerCount(followersRes.total);
 
       const followingRes = await databases.listDocuments(
           APPWRITE_DB_ID, 
           APPWRITE_COLLECTION_FOLLOWERS, 
-          [Query.equal('followerId', user.$id)]
+          [Query.equal('followerId', id as string)]
       );
       setFollowingCount(followingRes.total);
 
       const postsRes = await databases.listDocuments(
           APPWRITE_DB_ID,
           APPWRITE_COLLECTION_POSTS,
-          [Query.equal('userId', user.$id)]
+          [Query.equal('userId', id as string)]
       );
       setPostCount(postsRes.total);
+
+      if (currentAccount.$id !== id) {
+          const amIFollowing = await databases.listDocuments(
+              APPWRITE_DB_ID,
+              APPWRITE_COLLECTION_FOLLOWERS,
+              [
+                  Query.equal('followerId', currentAccount.$id),
+                  Query.equal('followingId', id as string)
+              ]
+          );
+          
+          if (amIFollowing.total > 0) {
+              setIsFollowing(true);
+              setFollowDocId(amIFollowing.documents[0].$id);
+          } else {
+              setIsFollowing(false);
+              setFollowDocId(null);
+          }
+      }
 
     } catch (err) {
       console.log("Profile Load Error", err);
@@ -134,8 +159,6 @@ export default function ProfileScreen() {
       setLoading(false);
     }
   };
-
-  useFocusEffect(useCallback(() => { fetchProfile(); }, []));
 
   const DATA = userProfile || DEFAULT_USER;
 
@@ -152,9 +175,41 @@ export default function ProfileScreen() {
   });
 
   const handleTabPress = (tab: string) => {
-      Haptics.selectionAsync();
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setActiveTab(tab);
+  };
+
+  const handleFollow = async () => {
+      if (!currentUserId || loading) return;
+
+      const previousState = isFollowing;
+      setIsFollowing(!isFollowing);
+      setFollowerCount(prev => isFollowing ? prev - 1 : prev + 1);
+
+      try {
+          if (previousState) {
+              if (followDocId) {
+                  await databases.deleteDocument(APPWRITE_DB_ID, APPWRITE_COLLECTION_FOLLOWERS, followDocId);
+                  setFollowDocId(null);
+              }
+          } else {
+              const newDoc = await databases.createDocument(
+                  APPWRITE_DB_ID, 
+                  APPWRITE_COLLECTION_FOLLOWERS, 
+                  ID.unique(), 
+                  {
+                      followerId: currentUserId,
+                      followingId: id,
+                      timestamp: new Date().toISOString()
+                  }
+              );
+              setFollowDocId(newDoc.$id);
+          }
+      } catch (error) {
+          console.error('Follow action failed', error);
+          setIsFollowing(previousState);
+          setFollowerCount(prev => previousState ? prev + 1 : prev - 1);
+      }
   };
 
   if (loading && !userProfile) {
@@ -163,7 +218,17 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor="transparent" translucent />
+      <Stack.Screen options={{ headerShown: false }} />
+      <StatusBar barStyle="light-content" translucent />
+
+      <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+      >
+          <Feather name="arrow-left" size={24} color="#FFF" />
+      </TouchableOpacity>
 
       <Animated.View style={[styles.headerBackground, { transform: [{ translateY: imageTranslate }, { scale: imageScale }] }]}>
          <SafeImage 
@@ -207,17 +272,26 @@ export default function ProfileScreen() {
              </View>
 
              <View style={styles.actionRow}>
-                 <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/edit-profile')}>
-                     <Text style={styles.editBtnText}>Edit</Text>
-                 </TouchableOpacity>
-                 
-                 <TouchableOpacity style={styles.iconActionBtn} onPress={() => Haptics.selectionAsync()}>
-                     <Feather name="share" size={22} color={colors.text} />
-                 </TouchableOpacity>
-
-                 <TouchableOpacity style={styles.iconActionBtn} onPress={() => router.push('/settings')}>
-                     <Feather name="settings" size={22} color={colors.text} />
-                 </TouchableOpacity>
+                 {isCurrentUser ? (
+                     <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/edit-profile')}>
+                         <Text style={styles.editBtnText}>Edit Profile</Text>
+                     </TouchableOpacity>
+                 ) : (
+                    <>
+                        <TouchableOpacity 
+                            style={[styles.editBtn, { backgroundColor: isFollowing ? colors.card : colors.primary, borderColor: isFollowing ? colors.border : colors.primary }]} 
+                            onPress={handleFollow}
+                        >
+                            <Text style={[styles.editBtnText, { color: isFollowing ? colors.text : '#FFF' }]}>
+                                {isFollowing ? 'Following' : 'Follow'}
+                            </Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity style={styles.iconActionBtn} onPress={() => router.push(`/messages/${id}`)}>
+                            <Feather name="message-square" size={22} color={colors.text} />
+                        </TouchableOpacity>
+                    </>
+                 )}
              </View>
         </View>
 
@@ -258,24 +332,6 @@ export default function ProfileScreen() {
             {activeTab === 'Journey' && (
                 <View style={styles.fadeIn}>
                     <MapWidget location={DATA.location} />
-                    <View style={styles.timelinePreview}>
-                        <View style={styles.timelineHeader}>
-                            <Text style={styles.sectionHeader}>Recent Movements</Text>
-                            <TouchableOpacity onPress={() => router.push('/profile-details/timeline')}>
-                                <Text style={styles.linkText}>See Full History</Text>
-                            </TouchableOpacity>
-                        </View>
-                        <View style={styles.timelineSnippet}>
-                             <View style={styles.dot} />
-                             <Text style={styles.snippetText}>Arrived in <Text style={{fontWeight:'700'}}>Baja, Mexico</Text></Text>
-                             <Text style={styles.snippetDate}>2 days ago</Text>
-                        </View>
-                        <View style={[styles.timelineSnippet, { opacity: 0.6 }]}>
-                             <View style={styles.dot} />
-                             <Text style={styles.snippetText}>Departed <Text style={{fontWeight:'700'}}>San Diego</Text></Text>
-                             <Text style={styles.snippetDate}>1 week ago</Text>
-                        </View>
-                    </View>
                 </View>
             )}
 
@@ -313,6 +369,19 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
   
+  backButton: {
+      position: 'absolute',
+      top: 50,
+      left: 20,
+      zIndex: 10,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+  },
+
   headerBackground: {
       position: 'absolute', left: 0, right: 0, height: HEADER_HEIGHT + 2, 
       top: -1, 

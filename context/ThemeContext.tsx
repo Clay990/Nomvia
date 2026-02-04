@@ -1,6 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useColorScheme } from 'react-native';
 
 const THEME_STORAGE_KEY = 'user_theme_preference';
 
@@ -48,7 +47,6 @@ const ThemeContext = createContext<ThemeContextType>({
 });
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const systemScheme = useColorScheme();
   const [theme, setTheme] = useState<ThemeType>('light'); // Default to light initially
 
   useEffect(() => {
@@ -60,8 +58,6 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       const savedTheme = await AsyncStorage.getItem(THEME_STORAGE_KEY);
       if (savedTheme) {
         setTheme(savedTheme as ThemeType);
-      } else if (systemScheme) {
-        setTheme(systemScheme as ThemeType);
       }
     } catch (error) {
       console.error('Failed to load theme preference', error);

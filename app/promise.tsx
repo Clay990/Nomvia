@@ -1,10 +1,35 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import React, { useState } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useAuth } from "../context/AuthContext";
+import { account, databases, APPWRITE_DB_ID, APPWRITE_COLLECTION_USERS } from "../lib/appwrite";
 
 export default function PromiseScreen() {
   const router = useRouter();
+  const { checkAuth } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleAgree = async () => {
+    setIsSubmitting(true);
+    try {
+      const user = await account.get();
+      await databases.updateDocument(
+        APPWRITE_DB_ID,
+        APPWRITE_COLLECTION_USERS,
+        user.$id,
+        {
+          completedOnboarding: true
+        }
+      );
+      await checkAuth();
+    } catch (error) {
+      console.error("Promise Error:", error);
+      Alert.alert("Error", "Could not complete setup. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -60,9 +85,14 @@ export default function PromiseScreen() {
         <TouchableOpacity 
           style={styles.button} 
           activeOpacity={0.8}
-          onPress={() => router.replace('/(tabs)/convoy')} 
+          onPress={handleAgree}
+          disabled={isSubmitting}
         >
-          <Text style={styles.buttonText}>I'm In</Text>
+          {isSubmitting ? (
+             <ActivityIndicator color="#FFF" />
+          ) : (
+             <Text style={styles.buttonText}>I'm In</Text>
+          )}
         </TouchableOpacity>
       </View>
     </View>

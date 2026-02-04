@@ -16,8 +16,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as ImagePicker from 'expo-image-picker';
-import { account, databases, storage, APPWRITE_DB_ID, APPWRITE_COLLECTION_USERS, APPWRITE_BUCKET_ID } from "./_appwrite";
+import { account, databases, storage, APPWRITE_DB_ID, APPWRITE_COLLECTION_USERS, APPWRITE_BUCKET_ID } from "../lib/appwrite";
 import { ID } from "react-native-appwrite";
+import { useAuth } from "../context/AuthContext";
 
 const STEPS = [
   { id: 'profile', title: 'Identity', icon: 'account-outline' },
@@ -35,6 +36,7 @@ const STYLES = ["Off-grid", "Campgrounds", "Mix"];
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const { checkAuth } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -57,7 +59,7 @@ export default function OnboardingScreen() {
 
   const pickImage = async (field: 'avatarUri' | 'rigImageUri') => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: 'images',
       allowsEditing: true,
       aspect: field === 'avatarUri' ? [1, 1] : [4, 3],
       quality: 0.5,
@@ -124,10 +126,11 @@ export default function OnboardingScreen() {
                 verified: true,
                 joined: new Date().toISOString(),
                 timeOnRoad: formData.timeOnRoad,
+                completedOnboarding: false
             }
         );
 
-        router.replace('/promise');
+        await checkAuth();
       } catch (error: any) {
         console.error("Onboarding Error:", error);
         Alert.alert("Error", "Could not save profile. Please try again.");

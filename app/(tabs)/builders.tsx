@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+import LockdownOverlay from '../../components/LockdownOverlay';
 
 const HELP_CATEGORIES = [
   { id: 1, label: "Mechanics", icon: "wrench", count: 12, dist: "5 km" },
@@ -72,6 +73,7 @@ export default function BuildersScreen() {
 
   return (
     <View style={styles.container}>
+      <LockdownOverlay />
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Service Hub</Text>
         <TouchableOpacity style={styles.sosButton}>

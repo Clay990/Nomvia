@@ -2,7 +2,7 @@
   "expo": {
     "name": "Nomvia",
     "slug": "Nomvia",
-    "version": "1.0.0",
+    "version": "0.0.2",
     "orientation": "portrait",
     "icon": "./assets/logo.png",
     "scheme": "appwrite-callback-6973457f000e977ae601",
@@ -14,6 +14,7 @@
     },
     "android": {
       "package": "com.nomvia.app",
+      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#000000",
         "foregroundImage": "./assets/logo.png"
@@ -32,15 +33,29 @@
         {
           "image": "./assets/splash.png",
           "imageWidth": 200,
-          "resizeMode": "cover",
+          "resizeMode": "contain",
           "backgroundColor": "#121212"
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "nomvia",
+          "organization": "gg-w5"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "456fe556-924d-429c-af45-9c12bee10c70"
+      }
     }
   }
 }

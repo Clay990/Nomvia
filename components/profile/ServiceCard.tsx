@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Switch } from 'react-native';
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { account, databases, APPWRITE_DB_ID, APPWRITE_COLLECTION_USERS } from '../../app/_appwrite'; 
+import { account, databases, APPWRITE_DB_ID, APPWRITE_COLLECTION_USERS } from '../../lib/appwrite'; 
 import { useTheme } from '../../context/ThemeContext';
 
 interface ServiceCardProps {

@@ -16,7 +16,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as ImagePicker from 'expo-image-picker';
-import { account, databases, storage, APPWRITE_DB_ID, APPWRITE_COLLECTION_USERS, APPWRITE_BUCKET_ID } from "./_appwrite";
+import { account, databases, storage, APPWRITE_DB_ID, APPWRITE_COLLECTION_USERS, APPWRITE_BUCKET_ID } from "../lib/appwrite";
 import { ID } from "react-native-appwrite";
 
 const ROLES = ["Nomad", "Builder", "Explorer", "Weekend Warrior"];
@@ -91,7 +91,7 @@ export default function EditProfileScreen() {
 
   const pickImage = async (field: 'avatar' | 'coverImage' | 'rigImage') => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: 'images',
       allowsEditing: true,
       aspect: field === 'coverImage' ? [16, 9] : (field === 'rigImage' ? [4, 3] : [1, 1]),
       quality: 0.5,
@@ -103,14 +103,14 @@ export default function EditProfileScreen() {
   };
 
   const uploadImage = async (uri: string) => {
-    if (!uri || uri.startsWith('http')) return uri; // Already a URL
+    if (!uri || uri.startsWith('http')) return uri; 
     try {
         const fileId = ID.unique();
         const file = {
             name: `${fileId}.jpg`,
             type: "image/jpeg",
             uri: uri,
-            size: 1, // Satisfy TS
+            size: 1,
         };
 
         const uploaded = await storage.createFile(APPWRITE_BUCKET_ID, fileId, file);
@@ -124,15 +124,12 @@ export default function EditProfileScreen() {
   const handleSave = async () => {
     setSaving(true);
     try {
-        // Upload images if changed
         const avatarUrl = await uploadImage(formData.avatar || "");
         const coverUrl = await uploadImage(formData.coverImage || "");
         const rigUrl = await uploadImage(formData.rigImage || "");
 
-        // Process skills
         const skillsArray = formData.skills.split(",").map(s => s.trim()).filter(s => s.length > 0);
 
-        // Sanitize URLs (empty string -> null)
         const sanitizeUrl = (url: string | null) => url && url.trim().length > 0 ? url : null;
 
         await databases.updateDocument(
@@ -187,7 +184,6 @@ export default function EditProfileScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{flex: 1}}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
             
-            {/* Visuals */}
             <Text style={styles.sectionTitle}>Visuals</Text>
             <TouchableOpacity style={styles.coverPicker} onPress={() => pickImage('coverImage')}>
                 {formData.coverImage ? (
@@ -213,7 +209,6 @@ export default function EditProfileScreen() {
                 <Text style={styles.miniLabel}>Change Avatar</Text>
             </View>
 
-            {/* Basic Info */}
             <Text style={styles.sectionTitle}>Basics</Text>
             <View style={styles.inputGroup}>
                 <Text style={styles.label}>Display Name</Text>
@@ -250,7 +245,6 @@ export default function EditProfileScreen() {
                 />
             </View>
 
-            {/* Identity */}
             <Text style={styles.sectionTitle}>Identity</Text>
             
             <View style={styles.selectorGroup}>
@@ -309,7 +303,6 @@ export default function EditProfileScreen() {
                 </View>
             </View>
 
-            {/* Rig */}
             <Text style={styles.sectionTitle}>Vehicle</Text>
             <TouchableOpacity style={styles.rigPicker} onPress={() => pickImage('rigImage')}>
                 {formData.rigImage ? (

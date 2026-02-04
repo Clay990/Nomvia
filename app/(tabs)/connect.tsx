@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+import LockdownOverlay from '../../components/LockdownOverlay';
 
 const { width, height } = Dimensions.get('window');
 
@@ -74,6 +75,7 @@ export default function ConnectScreen() {
 
   return (
     <View style={styles.container}>
+      <LockdownOverlay />
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Connect</Text>
         <TouchableOpacity style={styles.filterBtn}>

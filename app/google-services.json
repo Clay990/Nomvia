@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "93354352208",
+    "project_id": "nomvia-b6006",
+    "storage_bucket": "nomvia-b6006.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:93354352208:android:4fd8389918dc9cb3717b55",
+        "android_client_info": {
+          "package_name": "com.nomvia.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBEgRJZ-l8bNHo4CeWYyi1lcVADF4WqlMA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

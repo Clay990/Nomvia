@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+import LockdownOverlay from '../../components/LockdownOverlay';
 
 const MEETUPS = [
   {
@@ -81,6 +82,7 @@ export default function CommunityScreen() {
 
   return (
     <View style={styles.container}>
+      <LockdownOverlay />
       <View style={styles.header}>
         <View>
             <Text style={styles.headerTitle}>The Campfire</Text>

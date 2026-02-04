@@ -4,6 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import React, { useState } from "react";
 import {
   Alert,
+  Button,
   ScrollView,
   StyleSheet,
   Switch,
@@ -11,7 +12,7 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import { account } from "./_appwrite";
+import { account } from "../lib/appwrite";
 import { useTheme } from "../context/ThemeContext";
 
 const ACCOUNT_CREATED = "January 2024"; 

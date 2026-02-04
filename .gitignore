@@ -48,3 +48,9 @@ app-example
 /ContestInfo/
 # Database Setup Script (Contains Secrets)
 setup_database.js
+
+.env.local
+
+# Setup Scripts with Secrets
+set_database.js
+setup_storage.js

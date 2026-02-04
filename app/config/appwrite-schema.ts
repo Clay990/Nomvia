@@ -4,5 +4,8 @@ export const APPWRITE_CONFIG = {
         USERS: 'users',
         POSTS: 'posts',
         MATCHES: 'matches',
+        STORIES: 'stories',
+        COMMENTS: 'comments',
+        LIKES: 'likes',
     }
 };

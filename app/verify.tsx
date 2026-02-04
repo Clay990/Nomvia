@@ -16,10 +16,12 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { ID } from "react-native-appwrite";
 import * as SecureStore from 'expo-secure-store';
-import { account } from "./_appwrite";
+import { account } from "../lib/appwrite";
+import { useAuth } from "../context/AuthContext";
 
 export default function VerifyScreen() {
   const router = useRouter();
+  const { checkAuth } = useAuth();
   const { userId, email } = useLocalSearchParams();
 
   const [otp, setOtp] = useState("");
@@ -41,7 +43,7 @@ export default function VerifyScreen() {
       await SecureStore.setItemAsync('session_active', 'true');
 
       Alert.alert("Success", "Email verified! Welcome to Nomvia.");
-      router.replace('/onboarding');
+      await checkAuth();
     } catch (error) {
       console.error(error);
       Alert.alert("Verification Failed", "Invalid code or expired. Please try again.");

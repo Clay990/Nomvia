@@ -1,172 +1,247 @@
-import React from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
-  Image,
   TouchableOpacity,
+  FlatList,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const PLANS = [
-  {
-    id: 1,
-    user: "Sarah J.",
-    time: "2h ago",
-    verified: true,
-    avatar: "https://i.pravatar.cc/150?u=a042581f4e29026704d",
-    type: "none",
-    image: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=800&auto=format&fit=crop",
-    tag: "VAN LIFE",
-    from: "Manali",
-    to: "Leh",
-    desc: "Currently past Keylong and making good progress. Only 142km left to Leh—staying alert for the final passes!",
+import { useTheme } from "../../context/ThemeContext";
+import { PostsService } from "../services/posts";
+import PostCard from "../../components/PostCard";
+import SkeletonPost from "../../components/SkeletonPost";
+import { Post } from "../types";
+import { calculateDistance, CURRENT_USER_LOCATION } from "../../app/utils/location";
+import { events } from "../../app/utils/events";
+import { account, databases } from "../../lib/appwrite";
+import { APPWRITE_CONFIG } from "../../app/config/appwrite-schema";
+import { useAuth } from "../../context/AuthContext";
 
-    isLive: true,
-    totalKm: 470,
-    completedKm: 328
-  },
-  {
-    id: 2,
-    user: "Mike & Van",
-    time: "Heading out this weekend",
-    verified: false,
-    avatar: "https://i.pravatar.cc/150?u=a042581f4e29026024d",
-    type: "map",
-    image: "https://www.findingtheuniverse.com/wp-content/uploads/2018/09/Causeway-coastal-route-driving-map.jpg",
-    tag: "COASTAL ROUTE",
-    from: "Goa",
-    to: "Gokarna",
-    desc: "Slow travel down the coast. Looking for chill people to share bonfires with.",
-    isLive: false,
-  },
-  {
-    id: 3,
-    user: "Alex T.",
-    time: "Digital Nomad • Biker",
-    verified: false,
-    avatar: "https://i.pravatar.cc/150?u=a04258114e29026302d",
-    type: "none",
-    tag: "REMOTE WORK",
-    from: "Co-working in Varkala",
-    to: null,
-    desc: "Setting up base for a month. Anyone around for sunset cliffs?",
-    isLive: false,
-  }
-];
+import FeedHeader from "../../components/convoy/FeedHeader";
+import AnimatedHeader from "../../components/convoy/AnimatedHeader";
 
 export default function ConvoyScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
+  const { logout } = useAuth();
+  const insets = useSafeAreaInsets();
+
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastId, setLastId] = useState<string | undefined>(undefined);
+  const [hasMore, setHasMore] = useState(true);
+  const [userInterests, setUserInterests] = useState<string[]>([]);
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0); // To trigger child refreshes
+  const [filterType, setFilterType] = useState<'all' | 'trending' | 'latest'>('all');
+
+  useEffect(() => {
+    const fetchUserInterests = async () => {
+      try {
+        const user = await account.get();
+        const userDoc = await databases.getDocument(
+          APPWRITE_CONFIG.DATABASE_ID,
+          APPWRITE_CONFIG.COLLECTIONS.USERS,
+          user.$id
+        );
+        if (userDoc?.interests) {
+          setUserInterests(userDoc.interests);
+        }
+      } catch (error) {
+        console.log('Error fetching user interests', error);
+      }
+    };
+    fetchUserInterests();
+  }, []);
+
+  const fetchPosts = useCallback(async (cursorId?: string, shouldReset = false) => {
+    try {
+      if (shouldReset) setLoading(true);
+      
+      const { posts: newPosts } = await PostsService.getPosts({
+        lastId: cursorId,
+        limit: 20,
+        feedType: filterType,
+        searchQuery,
+        userInterests
+      });
+
+      if (shouldReset) {
+        setPosts(newPosts);
+        setLastId(newPosts.length > 0 ? newPosts[newPosts.length - 1].$id : undefined);
+      } else {
+        setPosts(prev => [...prev, ...newPosts]);
+        setLastId(newPosts.length > 0 ? newPosts[newPosts.length - 1].$id : undefined);
+      }
+
+      setHasMore(newPosts.length === 20);
+
+    } catch (error: any) {
+      console.error(error);
+      if (error.code === 401) {
+          logout();
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [searchQuery, filterType, userInterests]);
+
+  useEffect(() => {
+      const postUnsub = events.on('post_created', () => fetchPosts(undefined, true));
+      return () => { postUnsub(); };
+  }, [fetchPosts]);
+
+  useEffect(() => {
+    fetchPosts(undefined, true);
+  }, [fetchPosts]); 
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setRefreshKey(prev => prev + 1); 
+    fetchPosts(undefined, true);
+  }, [fetchPosts]);
+
+  const loadMore = useCallback(() => {
+    if (!loading && hasMore && lastId) {
+      fetchPosts(lastId);
+    }
+  }, [loading, hasMore, lastId, fetchPosts]);
+
+  const handleSearchSubmit = useCallback(() => {
+      fetchPosts(undefined, true);
+  }, [fetchPosts]);
+
+  const getDistanceString = useCallback((post: Post) => {
+      if (post.latitude && post.longitude) {
+          const dist = calculateDistance(
+              CURRENT_USER_LOCATION.latitude, 
+              CURRENT_USER_LOCATION.longitude, 
+              post.latitude, 
+              post.longitude
+          );
+          return dist < 1 ? "Nearby" : `${dist} km away`;
+      }
+      return undefined;
+  }, []);
+
+  const renderItem = useCallback(({ item }: { item: Post }) => (
+    <PostCard 
+        post={item} 
+        distance={getDistanceString(item)}
+        onOpen={(id) => router.push({ pathname: '/post/[id]', params: { id } })}
+    />
+  ), [getDistanceString]);
+
+  const keyExtractor = useCallback((item: Post) => item.$id, []);
+
+
+  const ListHeader = useMemo(() => (
+      <FeedHeader 
+          showSearch={showSearch}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          onSearchSubmit={handleSearchSubmit}
+          refreshKey={refreshKey}
+          filterType={filterType}
+          setFilterType={setFilterType}
+      />
+  ), [showSearch, searchQuery, handleSearchSubmit, refreshKey, filterType]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
 
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Nomads nearby</Text>
-        <TouchableOpacity style={styles.filterButton}>
-          <MaterialCommunityIcons name="tune-variant" size={24} color="#111" />
-        </TouchableOpacity>
-      </View>
+      <View style={[
+          styles.header, 
+          { 
+              backgroundColor: colors.background, 
+              borderBottomColor: colors.border,
+              paddingTop: insets.top + 10 
+          }
+      ]}>
+        <AnimatedHeader />
 
-      <ScrollView contentContainerStyle={styles.feed} showsVerticalScrollIndicator={false}>
-        {PLANS.map((plan) => (
-          <PlanCard key={plan.id} plan={plan} />
-        ))}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>No more nomads nearby</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <TouchableOpacity 
+            onPress={() => setShowSearch(!showSearch)} 
+            style={[styles.iconBtn, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
+            accessibilityLabel="Toggle search"
+            accessibilityRole="button"
+          >
+            <Feather name="search" size={20} color={colors.text} />
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            onPress={() => router.push('/create-post')} 
+            style={[styles.iconBtn, { backgroundColor: colors.text }]}
+            accessibilityLabel="Create Post"
+            accessibilityRole="button"
+          >
+            <MaterialCommunityIcons name="plus" size={24} color={colors.background} />
+          </TouchableOpacity>
         </View>
-      </ScrollView>
-      <View style={styles.floatingContainer}>
-        <TouchableOpacity
-          style={styles.mapPill}
-          activeOpacity={0.9}
-          onPress={() => router.push('/map')}
-        >
-          <Text style={styles.mapPillText}>Map</Text>
-          <MaterialCommunityIcons name="map-marker-multiple" size={16} color="#FFF" style={{ marginLeft: 6 }} />
-        </TouchableOpacity>
       </View>
-    </View>
-  );
-}
 
-function PlanCard({ plan }: { plan: any }) {
-
-  // Calculate Progress Percentage for the bar
-  const progressPercent = plan.isLive
-    ? (plan.completedKm / plan.totalKm) * 100
-    : 0;
-
-  const kmLeft = plan.isLive ? plan.totalKm - plan.completedKm : 0;
-
-  return (
-    <View style={styles.card}>
-
-      {plan.type !== 'none' && (
-        <View style={styles.mediaContainer}>
-          <Image source={{ uri: plan.image }} style={styles.cardImage} />
-          <View style={styles.tagBadge}>
-            {plan.type === 'map' && <MaterialCommunityIcons name="map-marker-path" size={14} color="#FFF" style={{ marginRight: 4 }} />}
-            <Text style={styles.tagText}>{plan.tag}</Text>
+      {loading && !refreshing && posts.length === 0 ? (
+          <View style={{ padding: 16 }}>
+              <SkeletonPost />
+              <SkeletonPost />
+              <SkeletonPost />
           </View>
-        </View>
+      ) : (
+          <FlatList
+            data={posts}
+            keyExtractor={keyExtractor}
+            renderItem={renderItem}
+            contentContainerStyle={styles.feed}
+            showsVerticalScrollIndicator={false}
+            ListHeaderComponent={ListHeader}
+            refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+            }
+            onEndReached={loadMore}
+            onEndReachedThreshold={0.5} 
+            removeClippedSubviews={true} 
+            initialNumToRender={5}
+            maxToRenderPerBatch={5}
+            windowSize={5}
+            ListFooterComponent={
+                loading && !refreshing ? <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 20 }} /> : null
+            }
+            ListEmptyComponent={
+                !loading ? (
+                    <View style={styles.emptyState}>
+                        <MaterialCommunityIcons name="post-outline" size={48} color={colors.border} />
+                        <Text style={{ color: colors.subtext, marginTop: 12 }}>No posts found nearby.</Text>
+                        <TouchableOpacity onPress={onRefresh} style={{ marginTop: 16 }}>
+                            <Text style={{ color: colors.primary, fontWeight: '700' }}>Refresh</Text>
+                        </TouchableOpacity>
+                    </View>
+                ) : null
+            }
+          />
       )}
 
-      <View style={styles.cardContent}>
-
-        <View style={styles.userRow}>
-          <Image source={{ uri: plan.avatar }} style={styles.avatar} />
-          <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Text style={styles.userName}>{plan.user}</Text>
-              {plan.verified && (
-                <MaterialCommunityIcons name="check-decagram" size={15} color="#000000" />
-              )}
-            </View>
-            <Text style={styles.timestamp}>{plan.time}</Text>
-          </View>
-          {plan.type === 'none' && (
-            <View style={[styles.tagBadge, { backgroundColor: '#F3F4F6', position: 'absolute', right: 0, top: 0, left: undefined, borderRadius: 8 }]}>
-              <Text style={[styles.tagText, { color: '#4B5563', fontSize: 11 }]}>{plan.tag}</Text>
-            </View>
-          )}
-        </View>
-
-        <View style={styles.routeSection}>
-          <View style={styles.routeHeader}>
-            <Text style={styles.locationText}>{plan.from}</Text>
-            {!plan.isLive ?
-              <MaterialCommunityIcons name="arrow-right" size={25} color="#323232" /> : null}
-            {plan.to && <Text style={styles.locationText}>{plan.to}</Text>}
-          </View>
-          {plan.isLive && (
-            <View style={styles.progressBarContainer}>
-              <View style={styles.track} />
-              <View style={[styles.fill, { width: `${progressPercent}%` }]} />
-              <View style={[styles.vanIconMarker, { left: `${progressPercent}%` }]}>
-                <View style={styles.vanCircle}>
-                  <MaterialCommunityIcons name="van-utility" size={12} color="#FFF" />
-                </View>
-              </View>
-            </View>
-          )}
-        </View>
-
-        <Text style={styles.description}>
-          {plan.desc}
-        </Text>
-        <View style={styles.buttonRow}>
-          <TouchableOpacity style={styles.joinButton} activeOpacity={0.8}>
-            <Text style={styles.joinButtonText}>Join</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.interestButton} activeOpacity={0.7}>
-            <Text style={styles.interestButtonText}>Interested</Text>
-          </TouchableOpacity>
-        </View>
-
+      <View style={styles.floatingContainer}>
+        <TouchableOpacity
+          style={[styles.mapPill, { backgroundColor: colors.text }]}
+          activeOpacity={0.9}
+          onPress={() => router.push('/map')}
+          accessibilityRole="button"
+          accessibilityLabel="Open Map View"
+        >
+          <Text style={[styles.mapPillText, { color: colors.background }]}>Map</Text>
+          <MaterialCommunityIcons name="map-marker-multiple" size={16} color={colors.background} style={{ marginLeft: 6 }} />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -175,208 +250,42 @@ function PlanCard({ plan }: { plan: any }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
   },
   header: {
-    paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingHorizontal: 20,
     paddingBottom: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#111',
-    letterSpacing: -0.5,
-  },
-  filterButton: {
-    padding: 4,
+  iconBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
   },
   feed: {
     padding: 16,
-    gap: 16,
-    paddingBottom: 50,
+    paddingTop: 0,
+    paddingBottom: 100,
   },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    overflow: 'hidden',
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-  },
-  mediaContainer: {
-    height: 160,
-    width: '100%',
-    position: 'relative',
-  },
-  cardImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  tagBadge: {
-    position: 'absolute',
-    top: 16,
-    left: 16,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  tagText: {
-    color: '#FFF',
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  cardContent: {
-    padding: 16,
-  },
-  userRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 16,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-  },
-  userName: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#111',
-  },
-  timestamp: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  routeSection: {
-    marginBottom: 16,
-  },
-  routeHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  locationText: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#111',
-  },
-  progressBarContainer: {
-    height: 20,
-    width: '100%',
-    borderRadius: 10,
-    overflow: 'hidden',
-    justifyContent: 'center',
-  },
-  track: {
-    height: 4,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 2,
-    width: '100%',
-    position: 'absolute',
-  },
-  fill: {
-    height: 4,
-    backgroundColor: '#111', 
-    borderRadius: 2,
-    position: 'absolute',
-    left: 0,
-  },
-  vanIconMarker: {
-    position: 'absolute',
-    marginLeft: -10,
-    top: -1, 
-  },
-  vanCircle: {
-    width: 20,
-    height: 20,
-    backgroundColor: '#111',
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FFF',
-  },
-
-  description: {
-    fontSize: 15,
-    color: '#4B5563',
-    lineHeight: 22,
-    marginBottom: 20,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  joinButton: {
-    flex: 1,
-    height: 48,
-    backgroundColor: '#000000',
-    borderRadius: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  joinButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 16,
-  },
-  interestButton: {
-    flex: 1,
-    height: 48,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  interestButtonText: {
-    color: '#111',
-    fontWeight: '700',
-    fontSize: 16,
-  },
-  footer: {
-    alignItems: 'center',
-    paddingVertical: 20,
-    gap: 8,
-    marginBottom: 20,
-  },
-  footerText: {
-    color: '#9CA3AF',
-    fontSize: 14,
+  emptyState: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingTop: 100,
   },
   floatingContainer: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 24,
     left: 0,
     right: 0,
     alignItems: 'center',
     zIndex: 10,
+    pointerEvents: 'box-none', 
   },
   mapPill: {
-    backgroundColor: '#000000',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 24,
@@ -389,7 +298,6 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   mapPillText: {
-    color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 14,
   }
