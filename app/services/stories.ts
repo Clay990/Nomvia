@@ -1,10 +1,12 @@
 import { ID, Query, ImageFormat } from 'react-native-appwrite';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { storage, account, databases, APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID } from '../../lib/appwrite';
 import { APPWRITE_CONFIG } from '../config/appwrite-schema';
 
 const BUCKET_ID = 'stories';
 const { DATABASE_ID, COLLECTIONS } = APPWRITE_CONFIG;
 const STORY_COLLECTION_ID = COLLECTIONS.STORIES;
+const CACHE_KEY = 'stories_cache';
 
 export const StoriesService = {
     async getStories({ lastId, limit = 10 }: { lastId?: string; limit?: number } = {}) {
@@ -66,6 +68,10 @@ export const StoriesService = {
 
             console.log('[StoriesService] Returning stories:', { count: stories.length, lastId: stories.length > 0 ? stories[stories.length - 1].id : undefined });
 
+            if (!lastId && stories.length > 0) {
+                AsyncStorage.setItem(CACHE_KEY, JSON.stringify(stories)).catch(e => console.log('Failed to cache stories', e));
+            }
+
             return {
                 stories,
                 total: response.total,
@@ -73,6 +79,14 @@ export const StoriesService = {
             };
         } catch (error: any) {
             console.error('Error fetching stories:', error);
+            if (!lastId) {
+                try {
+                    const cached = await AsyncStorage.getItem(CACHE_KEY);
+                    if (cached) {
+                        return { stories: JSON.parse(cached), total: 0, lastId: undefined };
+                    }
+                } catch (e) { console.log('Cache retrieval failed', e); }
+            }
             if (error.code === 404) {
                  console.warn("Stories collection might not exist yet or permissions issue.");
             }

@@ -3,6 +3,8 @@ import { View, Text, Animated, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTheme } from '../../context/ThemeContext';
 import { account } from '../../lib/appwrite';
+import { useLocation } from '../../context/LocationContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CURRENT_CONTEXT = {
     location: "Old Manali, HP",
@@ -14,9 +16,59 @@ const CURRENT_CONTEXT = {
 
 export default function AnimatedHeader() {
     const { colors } = useTheme();
+    const { location, address, loading: locationLoading } = useLocation();
     const [headerMode, setHeaderMode] = useState<'greeting' | 'location' | 'alert'>('greeting');
     const fadeAnim = useRef(new Animated.Value(1)).current;
     const [userName, setUserName] = useState('Nomad');
+
+    const locationText = address 
+        ? `${address.city || address.subregion || 'Unknown'}, ${address.region || address.country || ''}`
+        : (locationLoading ? "Locating..." : "Location Unavailable");
+
+    const [weather, setWeather] = useState({ temp: '--', icon: 'weather-cloudy', wind: '--' });
+
+    useEffect(() => {
+        AsyncStorage.getItem('last_weather').then(cached => {
+            if (cached) {
+                setWeather(JSON.parse(cached));
+            }
+        });
+
+        if (!location) return;
+
+        const fetchWeather = async () => {
+            try {
+                const { latitude, longitude } = location.coords;
+                const response = await fetch(
+                    `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code,wind_speed_10m&temperature_unit=celsius`
+                );
+                const data = await response.json();
+                
+                if (data.current) {
+                    const temp = Math.round(data.current.temperature_2m);
+                    const wind = Math.round(data.current.wind_speed_10m);
+                    const code = data.current.weather_code;
+                    let icon = 'weather-sunny';
+
+                    // Simple WMO code mapping
+                    if (code >= 1 && code <= 3) icon = 'weather-partly-cloudy';
+                    else if (code >= 45 && code <= 48) icon = 'weather-fog';
+                    else if (code >= 51 && code <= 67) icon = 'weather-rainy';
+                    else if (code >= 71 && code <= 77) icon = 'weather-snowy';
+                    else if (code >= 80 && code <= 82) icon = 'weather-pouring';
+                    else if (code >= 95) icon = 'weather-lightning';
+
+                    const newWeather = { temp: `${temp}°C`, icon, wind: `${wind} km/h` };
+                    setWeather(newWeather);
+                    AsyncStorage.setItem('last_weather', JSON.stringify(newWeather));
+                }
+            } catch (e) {
+                console.log("Weather fetch failed", e);
+            }
+        };
+
+        fetchWeather();
+    }, [location]);
 
     useEffect(() => {
         let isMounted = true;
@@ -111,17 +163,17 @@ export default function AnimatedHeader() {
                   <View style={{ justifyContent: 'center', gap: 2 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                           <MaterialCommunityIcons name="map-marker" size={16} color={colors.primary} />
-                          <Text style={{ fontSize: 16, fontWeight: '800', color: colors.text }}>{CURRENT_CONTEXT.location}</Text>
+                          <Text style={{ fontSize: 16, fontWeight: '800', color: colors.text }}>{locationText}</Text>
                       </View>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: 2 }}>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                              <MaterialCommunityIcons name={CURRENT_CONTEXT.weatherIcon as any} size={14} color={colors.subtext} />
-                              <Text style={{ fontSize: 11, color: colors.subtext, fontWeight: '600' }}>{CURRENT_CONTEXT.temp}</Text>
+                              <MaterialCommunityIcons name={weather.icon as any} size={14} color={colors.subtext} />
+                              <Text style={{ fontSize: 11, color: colors.subtext, fontWeight: '600' }}>{weather.temp}</Text>
                           </View>
                           <View style={{ width: 1, height: 10, backgroundColor: colors.border }} />
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                              <MaterialCommunityIcons name="wind-power" size={14} color={colors.subtext} />
-                              <Text style={{ fontSize: 11, color: colors.subtext, fontWeight: '600' }}>AQI {CURRENT_CONTEXT.aqi}</Text>
+                              <MaterialCommunityIcons name="weather-windy" size={14} color={colors.subtext} />
+                              <Text style={{ fontSize: 11, color: colors.subtext, fontWeight: '600' }}>Wind {weather.wind}</Text>
                           </View>
                       </View>
                   </View>

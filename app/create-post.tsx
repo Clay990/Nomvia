@@ -316,8 +316,12 @@ export default function CreatePostScreen() {
         events.emit('post_created');
         
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Alert.alert("Success", isScheduled ? "Post scheduled!" : "Published!");
-        router.back();
+        
+        showNotification(isScheduled ? "Post scheduled!" : "Published successfully!");
+        setTimeout(() => {
+            router.back();
+        }, 1500);
+
     } catch (e) {
         setIsSubmitting(false);
         console.error(e);

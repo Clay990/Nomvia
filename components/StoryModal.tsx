@@ -16,6 +16,7 @@ import {
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { getStoryMedia, prefetchStory } from '../app/utils/cache';
 
 const { width } = Dimensions.get('window');
 const DEFAULT_DURATION = 5000;
@@ -40,6 +41,7 @@ interface StoryModalProps {
 
 export default function StoryModal({ visible, onClose, stories, initialIndex, onStoryViewed }: StoryModalProps) {
     const [currentIndex, setCurrentIndex] = useState(initialIndex);
+    const [mediaUri, setMediaUri] = useState<string>("");
     const [isPaused, setIsPaused] = useState(false);
     const [liked, setLiked] = useState(false);
     const [isContentReady, setIsContentReady] = useState(false);
@@ -53,16 +55,24 @@ export default function StoryModal({ visible, onClose, stories, initialIndex, on
     }, [visible, initialIndex]);
 
     useEffect(() => {
-        if (currentIndex < stories.length - 1) {
-            const nextStory = stories[currentIndex + 1];
-            if (nextStory?.type !== 'video' && nextStory?.storyImage) {
-                Image.prefetch(nextStory.storyImage);
+        const loadMedia = async () => {
+            if (currentStory?.storyImage) {
+                setIsContentReady(false);
+                const uri = await getStoryMedia(currentStory.storyImage, currentStory.id);
+                setMediaUri(uri);
             }
+        };
+        loadMedia();
+
+        if (currentIndex < stories.length - 1) {
+            const next = stories[currentIndex + 1];
+            if (next?.storyImage) prefetchStory(next.storyImage, next.id);
+        }
+        if (currentIndex < stories.length - 2) {
+            const nextNext = stories[currentIndex + 2];
+            if (nextNext?.storyImage) prefetchStory(nextNext.storyImage, nextNext.id);
         }
     }, [currentIndex, stories]);
-
-    useEffect(() => {
-    }, [visible, stories, initialIndex, currentIndex]);
 
     const handleNext = useCallback(() => {
         if (currentIndex < stories.length - 1) {
@@ -173,7 +183,7 @@ export default function StoryModal({ visible, onClose, stories, initialIndex, on
                     )}
                     {currentStory.type === 'video' ? (
                         <Video
-                            source={{ uri: currentStory.storyImage || "" }}
+                            source={{ uri: mediaUri || currentStory.storyImage || "" }}
                             style={styles.image}
                             resizeMode={ResizeMode.COVER}
                             shouldPlay={!isPaused && isContentReady}
@@ -185,7 +195,7 @@ export default function StoryModal({ visible, onClose, stories, initialIndex, on
                         />
                     ) : (
                         <Image 
-                            source={currentStory.storyImage ? { uri: currentStory.storyImage } : require('../assets/images/icon.png')} 
+                            source={mediaUri ? { uri: mediaUri } : { uri: currentStory.storyImage }} 
                             style={styles.image} 
                             contentFit="cover"
                             cachePolicy="memory-disk"

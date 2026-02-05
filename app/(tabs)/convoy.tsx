@@ -25,6 +25,8 @@ import { useAuth } from "../../context/AuthContext";
 
 import FeedHeader from "../../components/convoy/FeedHeader";
 import AnimatedHeader from "../../components/convoy/AnimatedHeader";
+import PostOptionsModal from "../../components/PostOptionsModal";
+import { Alert } from "react-native";
 
 export default function ConvoyScreen() {
   const router = useRouter();
@@ -41,8 +43,11 @@ export default function ConvoyScreen() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0); // To trigger child refreshes
+  const [refreshKey, setRefreshKey] = useState(0); 
   const [filterType, setFilterType] = useState<'all' | 'trending' | 'latest'>('all');
+
+  const [postOptionsVisible, setPostOptionsVisible] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUserInterests = async () => {
@@ -121,6 +126,19 @@ export default function ConvoyScreen() {
       fetchPosts(undefined, true);
   }, [fetchPosts]);
 
+  const handleMoreOptions = useCallback((postId: string) => {
+      setSelectedPostId(postId);
+      setPostOptionsVisible(true);
+  }, []);
+
+  const handleOptionSelect = (option: 'share' | 'report' | 'block') => {
+      setPostOptionsVisible(false);
+      setTimeout(() => {
+          if (option === 'report') Alert.alert("Reported", "Thanks for keeping the convoy safe.");
+          if (option === 'block') Alert.alert("Blocked", "You won't see posts from this user.");
+      }, 500);
+  };
+
   const getDistanceString = useCallback((post: Post) => {
       if (post.latitude && post.longitude) {
           const dist = calculateDistance(
@@ -139,8 +157,9 @@ export default function ConvoyScreen() {
         post={item} 
         distance={getDistanceString(item)}
         onOpen={(id) => router.push({ pathname: '/post/[id]', params: { id } })}
+        onMoreOptions={() => handleMoreOptions(item.$id)}
     />
-  ), [getDistanceString]);
+  ), [getDistanceString, handleMoreOptions]);
 
   const keyExtractor = useCallback((item: Post) => item.$id, []);
 
@@ -243,6 +262,12 @@ export default function ConvoyScreen() {
           <MaterialCommunityIcons name="map-marker-multiple" size={16} color={colors.background} style={{ marginLeft: 6 }} />
         </TouchableOpacity>
       </View>
+
+      <PostOptionsModal 
+        visible={postOptionsVisible}
+        onClose={() => setPostOptionsVisible(false)}
+        onSelect={handleOptionSelect}
+      />
     </View>
   );
 }

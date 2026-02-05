@@ -17,7 +17,6 @@ export default function StoriesSection({ refreshKey }: StoriesSectionProps) {
     const router = useRouter();
     const { colors, isDark } = useTheme();
     
-    // Story State
     const [stories, setStories] = useState<any[]>([]);
     
     const loadingStoriesRef = useRef(false);
@@ -139,7 +138,7 @@ export default function StoriesSection({ refreshKey }: StoriesSectionProps) {
 
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 12 }}>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>Nearby Now</Text>
-                <TouchableOpacity>
+                <TouchableOpacity onPress={() => router.push('/stories')}>
                     <Text style={{ fontSize: 12, color: colors.primary, fontWeight: '600' }}>See all</Text>
                 </TouchableOpacity>
             </View>

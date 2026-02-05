@@ -13,13 +13,14 @@ interface PostCardProps {
     onLike?: (id: string) => void;
     onComment?: (id: string) => void;
     onOpen?: (id: string) => void;
+    onMoreOptions?: () => void;
     distance?: string;
 }
 
 const BLUR_HASH = 'LEHV6nWB2yk8pyo0adR*.7kCMdnj';
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export default function PostCard({ post, onLike, onComment, onOpen, distance }: PostCardProps) {
+export default function PostCard({ post, onLike, onComment, onOpen, onMoreOptions, distance }: PostCardProps) {
     const router = useRouter();
     const { colors, isDark } = useTheme();
     const [liked, setLiked] = useState(false);
@@ -112,10 +113,14 @@ export default function PostCard({ post, onLike, onComment, onOpen, distance }: 
 
     const handleMoreOptions = () => {
         Haptics.selectionAsync();
-        Alert.alert("Post Options", undefined, [
-            { text: 'Report Content', style: 'destructive', onPress: () => {} },
-            { text: 'Cancel', style: 'cancel' }
-        ]);
+        if (onMoreOptions) {
+            onMoreOptions();
+        } else {
+            Alert.alert("Post Options", undefined, [
+                { text: 'Report Content', style: 'destructive', onPress: () => {} },
+                { text: 'Cancel', style: 'cancel' }
+            ]);
+        }
     };
 
     const goToProfile = () => {
