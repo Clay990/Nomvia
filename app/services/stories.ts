@@ -2,6 +2,7 @@ import { ID, Query, ImageFormat } from 'react-native-appwrite';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { storage, account, databases, APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID } from '../../lib/appwrite';
 import { APPWRITE_CONFIG } from '../config/appwrite-schema';
+import { globalNetworkState } from '../../context/NetworkContext';
 
 const BUCKET_ID = 'stories';
 const { DATABASE_ID, COLLECTIONS } = APPWRITE_CONFIG;
@@ -11,6 +12,18 @@ const CACHE_KEY = 'stories_cache';
 export const StoriesService = {
     async getStories({ lastId, limit = 10 }: { lastId?: string; limit?: number } = {}) {
         console.log('[StoriesService] getStories called', { lastId, limit });
+        
+        if (!globalNetworkState.isInternetReachable) {
+            console.log('[StoriesService] Offline, returning cached stories.');
+            try {
+                const cached = await AsyncStorage.getItem(CACHE_KEY);
+                if (cached) {
+                    return { stories: JSON.parse(cached), total: 0, lastId: undefined };
+                }
+            } catch (e) {}
+            return { stories: [], total: 0, lastId: undefined };
+        }
+
         try {
             const now = new Date().toISOString();
             const queries = [
@@ -68,7 +81,7 @@ export const StoriesService = {
 
             console.log('[StoriesService] Returning stories:', { count: stories.length, lastId: stories.length > 0 ? stories[stories.length - 1].id : undefined });
 
-            if (!lastId && stories.length > 0) {
+            if (!lastId) {
                 AsyncStorage.setItem(CACHE_KEY, JSON.stringify(stories)).catch(e => console.log('Failed to cache stories', e));
             }
 

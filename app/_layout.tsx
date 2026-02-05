@@ -6,10 +6,12 @@ import * as SplashScreen from 'expo-splash-screen';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { LocationProvider } from '../context/LocationContext';
+import { NetworkProvider } from '../context/NetworkContext';
 import { useFonts, YoungSerif_400Regular } from '@expo-google-fonts/young-serif';
 import { Inter_400Regular, Inter_600SemiBold } from '@expo-google-fonts/inter';
 import { useEffect } from "react";
 import LoadingScreen from '../components/LoadingScreen';
+import OfflineNotice from '../components/OfflineNotice';
 import * as Sentry from '@sentry/react-native';
 
 Sentry.init({
@@ -95,11 +97,14 @@ export default Sentry.wrap(function RootLayout() {
 
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <LocationProvider>
-          <AppContent />
-        </LocationProvider>
-      </AuthProvider>
+      <NetworkProvider>
+        <AuthProvider>
+          <LocationProvider>
+            <AppContent />
+            <OfflineNotice />
+          </LocationProvider>
+        </AuthProvider>
+      </NetworkProvider>
     </ThemeProvider>
   );
 });

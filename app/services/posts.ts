@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { APPWRITE_CONFIG } from '../config/appwrite-schema';
 import { Post } from '../types';
 import { account, databases, storage, APPWRITE_BUCKET_ID, APPWRITE_PROJECT_ID, APPWRITE_ENDPOINT } from '../../lib/appwrite'; 
+import { globalNetworkState } from '../../context/NetworkContext';
 
 const { DATABASE_ID, COLLECTIONS } = APPWRITE_CONFIG;
 
@@ -22,6 +23,20 @@ export const PostsService = {
         searchQuery?: string;
         userInterests?: string[];
     }) {
+        
+        if (!globalNetworkState.isInternetReachable) {
+            console.log('[PostsService] Offline, returning cached posts.');
+            if (!lastId && (feedType === 'latest' || feedType === 'all')) {
+                try {
+                    const cachedData = await AsyncStorage.getItem(CACHE_KEY);
+                    if (cachedData) {
+                        return { posts: JSON.parse(cachedData), total: 0 };
+                    }
+                } catch (cacheError) { console.error('Cache error', cacheError); }
+            }
+            return { posts: [], total: 0 };
+        }
+
         try {
             const queries = [
                 Query.limit(limit),
@@ -60,7 +75,7 @@ export const PostsService = {
 
             const posts = response.documents as unknown as Post[];
 
-            if (!lastId && feedType === 'latest' && !searchQuery) {
+            if (!lastId && (feedType === 'latest' || feedType === 'all') && !searchQuery) {
                 await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(posts));
             }
 
@@ -71,7 +86,7 @@ export const PostsService = {
         } catch (error) {
             console.error('Error fetching posts:', error);
             
-            if (!lastId && feedType === 'latest') {
+            if (!lastId && (feedType === 'latest' || feedType === 'all')) {
                 try {
                     const cachedData = await AsyncStorage.getItem(CACHE_KEY);
                     if (cachedData) {

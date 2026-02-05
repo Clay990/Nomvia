@@ -3,6 +3,7 @@ import { Models } from 'react-native-appwrite';
 import { useRouter, useSegments } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import * as WebBrowser from "expo-web-browser";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { OAuthProvider } from "react-native-appwrite";
 import { account, databases, APPWRITE_DB_ID, APPWRITE_COLLECTION_USERS } from '../lib/appwrite';
 
@@ -127,18 +128,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(currentUser);
       setUserData(nextUserData);
       await SecureStore.setItemAsync('session_active', 'true'); 
+      
+      await AsyncStorage.setItem('cached_user', JSON.stringify(currentUser));
+      if (nextUserData) {
+          await AsyncStorage.setItem('cached_user_data', JSON.stringify(nextUserData));
+      }
+
     } catch (error: any) {
       if (error.code === 401 || error.code === 403) {
           console.log("Not logged in (401/403)");
           setUser(null);
           setUserData(null);
           await SecureStore.deleteItemAsync('session_active');
+          await AsyncStorage.removeItem('cached_user');
+          await AsyncStorage.removeItem('cached_user_data');
       } else {
           console.error("Auth Check Failed (System Error):", error);
-          // If network error, we don't want to log them out, just show retry
-          setAuthError(true);
-          // Don't clear user state here if we want to persist "maybe logged in" UI,
-          // but usually cleaner to block until we know.
+          
+          const cachedUserStr = await AsyncStorage.getItem('cached_user');
+          const cachedUserDataStr = await AsyncStorage.getItem('cached_user_data');
+
+          if (cachedUserStr) {
+              console.log("Recovering from offline cache...");
+              setUser(JSON.parse(cachedUserStr));
+              if (cachedUserDataStr) {
+                  setUserData(JSON.parse(cachedUserDataStr));
+              }
+              setAuthError(false);
+          } else {
+              setAuthError(true);
+          }
       }
     } finally {
       setAuthChecked(true);
@@ -154,6 +173,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       await account.deleteSession('current');
       await SecureStore.deleteItemAsync('session_active');
+      await AsyncStorage.removeItem('cached_user');
+      await AsyncStorage.removeItem('cached_user_data');
     } catch (e) {
       console.error("Logout failed", e);
     } finally {
@@ -163,7 +184,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // ... (Keep handleDeepLink removal from previous turn)
 
   useEffect(() => {
     checkAuth();
