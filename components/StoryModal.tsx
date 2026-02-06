@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getStoryMedia, prefetchStory } from '../app/utils/cache';
+import { StoriesService } from '../app/services/stories';
 
 const { width } = Dimensions.get('window');
 const DEFAULT_DURATION = 5000;
@@ -44,9 +45,33 @@ export default function StoryModal({ visible, onClose, stories, initialIndex, on
     const [mediaUri, setMediaUri] = useState<string>("");
     const [isPaused, setIsPaused] = useState(false);
     const [liked, setLiked] = useState(false);
+    const [replyText, setReplyText] = useState('');
     const [isContentReady, setIsContentReady] = useState(false);
     const progress = useRef(new Animated.Value(0)).current;
     const currentStory = stories[currentIndex];
+
+    useEffect(() => {
+        setLiked(false);
+        setReplyText('');
+    }, [currentIndex]);
+
+    const handleLike = async () => {
+        if (!liked) {
+            setLiked(true);
+            await StoriesService.likeStory(currentStory.id);
+        }
+    };
+
+    const handleReply = async () => {
+        if (!replyText.trim()) return;
+        
+        handlePause(); 
+        const text = replyText;
+        setReplyText(''); 
+        
+        await StoriesService.replyToStory(currentStory.id, text);
+        handleResume();
+    };
 
     useEffect(() => {
         if (visible) {
@@ -250,13 +275,18 @@ export default function StoryModal({ visible, onClose, stories, initialIndex, on
                                 placeholder="Reply to journey..." 
                                 placeholderTextColor="rgba(255,255,255,0.6)"
                                 style={styles.replyInput}
+                                value={replyText}
+                                onChangeText={setReplyText}
+                                onSubmitEditing={handleReply}
+                                onFocus={handlePause}
+                                onBlur={handleResume}
                             />
-                            <TouchableOpacity>
+                            <TouchableOpacity onPress={handleReply}>
                                 <MaterialCommunityIcons name="send" size={20} color="#FFD700" />
                             </TouchableOpacity>
                         </View>
                         <TouchableOpacity 
-                            onPress={() => setLiked(!liked)} 
+                            onPress={handleLike} 
                             style={[styles.fab, liked && { backgroundColor: 'rgba(255, 68, 68, 0.2)' }]}
                             accessibilityLabel="Like story"
                         >

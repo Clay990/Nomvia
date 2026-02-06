@@ -28,17 +28,13 @@ export default function PostCard({ post, onLike, onComment, onOpen, onMoreOption
     const [bookmarked, setBookmarked] = useState(false);
     
     const fadeAnim = useRef(new Animated.Value(0)).current;
-    const slideAnim = useRef(new Animated.Value(20)).current;
     const heartScale = useRef(new Animated.Value(0)).current;
 
     const lastTap = useRef<number | null>(null);
     const isNavigating = useRef(false);
 
     useEffect(() => {
-        Animated.parallel([
-            Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
-            Animated.timing(slideAnim, { toValue: 0, duration: 500, useNativeDriver: true })
-        ]).start();
+        Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start();
     }, []);
 
     const progressPercent = (post.isLive && post.totalKm && post.completedKm)
@@ -137,7 +133,6 @@ export default function PostCard({ post, onLike, onComment, onOpen, onMoreOption
                     backgroundColor: colors.card, 
                     borderColor: isDark ? '#333' : '#F3F4F6',
                     opacity: fadeAnim,
-                    transform: [{ translateY: slideAnim }]
                 }
             ]}
             accessible={true}

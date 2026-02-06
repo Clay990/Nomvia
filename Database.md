@@ -138,6 +138,8 @@ This file serves as the source of truth for the Appwrite Database schema.
 | `user_avatar` | Url | - | No | No | Cached User Avatar |
 | `createdAt` | Datetime | - | Yes | No | Creation time |
 | `expiresAt` | Datetime | - | Yes | No | Expiration time (24h) |
+| `likes` | Integer | - | No | No | Number of likes |
+| `views` | Integer | - | No | No | Number of views |
 
 ## Indexing Strategy
 

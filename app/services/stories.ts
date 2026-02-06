@@ -172,5 +172,42 @@ export const StoriesService = {
         } catch (error) {
             console.log('Error updating view count:', error);
         }
+    },
+
+    async likeStory(storyId: string) {
+        try {
+            const doc = await databases.getDocument(DATABASE_ID, STORY_COLLECTION_ID, storyId);
+            await databases.updateDocument(DATABASE_ID, STORY_COLLECTION_ID, storyId, {
+                likes: (doc.likes || 0) + 1
+            });
+            return true;
+        } catch (error) {
+            console.error('Error liking story:', error);
+            return false;
+        }
+    },
+
+    async replyToStory(storyId: string, text: string) {
+        try {
+            const user = await account.get();
+            // In a real app, this would create a message in the MESSAGES collection
+            // linked to the story author. For MVP, we save to COMMENTS with a flag.
+            await databases.createDocument(
+                DATABASE_ID, 
+                APPWRITE_CONFIG.COLLECTIONS.COMMENTS,
+                ID.unique(),
+                {
+                    storyId: storyId,
+                    userId: user.$id,
+                    content: text,
+                    type: 'story_reply',
+                    createdAt: new Date().toISOString()
+                }
+            );
+            return true;
+        } catch (error) {
+            console.error('Error replying to story:', error);
+            return false;
+        }
     }
 };

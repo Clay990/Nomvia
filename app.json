@@ -2,7 +2,7 @@
   "expo": {
     "name": "Nomvia",
     "slug": "Nomvia",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "orientation": "portrait",
     "icon": "./assets/logo.png",
     "scheme": "appwrite-callback-6973457f000e977ae601",
@@ -14,7 +14,7 @@
     },
     "android": {
       "package": "com.nomvia.app",
-      "versionCode": 2,
+      "versionCode": 3,
       "adaptiveIcon": {
         "backgroundColor": "#000000",
         "foregroundImage": "./assets/logo.png"
