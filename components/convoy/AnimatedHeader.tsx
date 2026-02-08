@@ -136,6 +136,13 @@ export default function AnimatedHeader() {
         };
     }, []);
 
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return 'Good morning';
+        if (hour < 17) return 'Good afternoon';
+        return 'Good evening';
+    };
+
     const renderContent = () => {
         switch (headerMode) {
             case 'greeting':
@@ -143,7 +150,7 @@ export default function AnimatedHeader() {
                     <View style={{ justifyContent: 'center' }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                             <MaterialCommunityIcons name="hand-wave" size={20} color={colors.primary} />
-                            <Text style={{ fontSize: 18, fontWeight: '800', color: colors.text }}>Good morning, {userName}</Text>
+                            <Text style={{ fontSize: 18, fontWeight: '800', color: colors.text }}>{getGreeting()}, {userName}</Text>
                         </View>
                         <Text style={{ fontSize: 11, color: colors.subtext, marginLeft: 28 }}>Ready for today&apos;s journey?</Text>
                     </View>

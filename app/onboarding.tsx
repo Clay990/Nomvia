@@ -105,30 +105,52 @@ export default function OnboardingScreen() {
         const avatarUrl = formData.avatarUri ? await uploadImage(formData.avatarUri) : null;
         const rigUrl = formData.rigImageUri ? await uploadImage(formData.rigImageUri) : null;
 
-        await databases.createDocument(
-            APPWRITE_DB_ID, 
-            APPWRITE_COLLECTION_USERS,
-            user.$id, 
-            {
-                username: formData.name || user.name,
-                age: formData.age ? parseInt(formData.age) : 0,
-                location: formData.location,
-                bio: formData.bio,
-                avatar: avatarUrl,
-                role: formData.role,
-                pace: formData.pace,
-                mode: formData.mode,
-                style: formData.style,
-                interests: formData.selectedInterests,
-                rigName: formData.rigName,
-                rigSummary: formData.rigType,
-                rigImage: rigUrl,
-                verified: true,
-                joined: new Date().toISOString(),
-                timeOnRoad: formData.timeOnRoad,
-                completedOnboarding: false
+        const payload = {
+            username: formData.name || user.name,
+            age: formData.age ? parseInt(formData.age) : 0,
+            location: formData.location,
+            bio: formData.bio,
+            avatar: avatarUrl,
+            role: formData.role,
+            pace: formData.pace,
+            mode: formData.mode,
+            style: formData.style,
+            interests: formData.selectedInterests,
+            rigName: formData.rigName,
+            rigSummary: formData.rigType,
+            rigImage: rigUrl,
+            verified: true,
+            timeOnRoad: formData.timeOnRoad,
+            completedOnboarding: true
+        };
+
+        try {
+            console.log("Attempting to update existing profile...");
+            await databases.updateDocument(
+                APPWRITE_DB_ID, 
+                APPWRITE_COLLECTION_USERS,
+                user.$id, 
+                payload
+            );
+            console.log("Profile updated successfully (Function pre-created it).");
+        } catch (error: any) {
+            if (error.code === 404) {
+                console.log("Profile not found (404). Falling back to manual creation.");
+                await databases.createDocument(
+                    APPWRITE_DB_ID, 
+                    APPWRITE_COLLECTION_USERS,
+                    user.$id, 
+                    {
+                        ...payload,
+                        joined: new Date().toISOString()
+                    }
+                );
+                console.log("Profile created manually.");
+            } else {
+                console.error("Profile update failed with non-404 error:", error);
+                throw error;
             }
-        );
+        }
 
         await checkAuth();
       } catch (error: any) {

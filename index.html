@@ -3,442 +3,238 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nomvia | The OS for Modern Nomads</title>
-    <meta name="description" content="Safety, Community, and Utility for Vanlife. Join live convoys and find verified help on the road.">
+    <title>Nomvia - Meet People Who Move | Social Network for Van-Lifers</title>
+    <meta name="description" content="A trust-based social network for van-lifers and digital nomads. Find travel companions, share routes, connect with verified helpers. Built for Shipyard 2026.">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="premium-style.css">
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <style>
-        :root {
-            --bg-color: #050505;
-            --surface-color: #121212;
-            --border-color: #2A2A2A;
-            --text-primary: #FFFFFF;
-            --text-secondary: #A1A1A1;
-            --accent-blue: #3B82F6;
-            --accent-orange: #F59E0B;
-            --accent-red: #EF4444;
-            --glass: rgba(255, 255, 255, 0.03);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-primary);
-            overflow-x: hidden;
-            line-height: 1.6;
-        }
-
-        /* --- UTILITIES --- */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 24px;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 14px 32px;
-            border-radius: 50px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            font-size: 0.95rem;
-            cursor: pointer;
-            border: none;
-            white-space: nowrap; /* Prevents text wrapping */
-        }
-
-        .btn-primary {
-            background-color: var(--text-primary);
-            color: var(--bg-color);
-        }
-
-        .btn-accent {
-            background-color: var(--accent-blue);
-            color: white;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(255, 255, 255, 0.1);
-        }
-
-        .btn-secondary {
-            background: transparent;
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-        }
-
-        .btn-secondary:hover {
-            border-color: var(--text-primary);
-            box-shadow: none;
-        }
-
-        .badge {
-            background: rgba(59, 130, 246, 0.1);
-            color: var(--accent-blue);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            display: inline-block;
-            margin-bottom: 20px;
-        }
-
-        /* --- FORM STYLES --- */
-        .waitlist-form-container {
-            margin-top: 40px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 30px; /* Increased gap to prevent overlap */
-            width: 100%;
-        }
-
-        .input-group {
-            display: flex;
-            gap: 10px;
-            background: var(--surface-color);
-            padding: 6px;
-            border-radius: 50px;
-            border: 1px solid var(--border-color);
-            width: 100%;
-            max-width: 450px;
-            position: relative;
-            z-index: 50; /* Ensures it stays on top */
-        }
-
-        .input-field {
-            flex: 1;
-            background: transparent;
-            border: none;
-            padding: 0 20px;
-            color: var(--text-primary);
-            font-size: 1rem;
-            outline: none;
-            min-height: 48px; /* Touch target size */
-        }
-
-        .button-group {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-            justify-content: center;
-            position: relative;
-            z-index: 40;
-            margin-top: 10px; /* Extra breathing room */
-        }
-
-
-        /* --- HERO SECTION --- */
-        .hero {
-            position: relative;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            background: radial-gradient(circle at 50% 10%, #1a1a1a 0%, #050505 60%);
-            padding-bottom: 200px; /* Increased space for phone */
-            padding-top: 80px;
-        }
-
-        .road-line {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            left: 50%;
-            width: 2px;
-            background: linear-gradient(to bottom, transparent, var(--accent-blue), transparent);
-            opacity: 0.2;
-            transform: translateX(-50%);
-            z-index: 0;
-        }
-
-        .hero-content {
-            z-index: 10;
-            max-width: 800px;
-            animation: fadeIn 1s ease-out;
-            width: 100%;
-        }
-
-        .hero h1 {
-            font-size: 4.5rem;
-            font-weight: 800;
-            letter-spacing: -2px;
-            margin-bottom: 24px;
-            line-height: 1.1;
-            background: linear-gradient(to right, #fff, #888);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .hero p {
-            font-size: 1.25rem;
-            color: var(--text-secondary);
-            margin-bottom: 40px;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        /* --- APP PREVIEW (Floating Phone) --- */
-        .app-preview-container {
-            margin-top: -150px; /* Reduced negative margin to stop overlap */
-            text-align: center;
-            perspective: 1000px;
-            padding-bottom: 100px;
-            z-index: 20;
-            position: relative;
-        }
-
-        .phone-mockup {
-            width: 320px;
-            height: 650px;
-            background: #000;
-            border-radius: 45px;
-            border: 8px solid #222;
-            margin: 0 auto;
-            position: relative;
-            box-shadow: 0 20px 80px rgba(0,0,0,0.8);
-            transform: rotateX(10deg) rotateY(-10deg);
-            transition: transform 0.5s ease;
-            overflow: hidden;
-        }
-
-        .phone-mockup:hover {
-            transform: rotateX(0deg) rotateY(0deg);
-        }
-
-        .screen-content {
-            width: 100%;
-            height: 100%;
-            background: #0f0f0f;
-            overflow: hidden; /* Ensures image doesn't bleed out */
-        }
-
-        .screen-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover; /* Cover fills the space nicely */
-            border-radius: 36px;
-            display: block;
-        }
-
-        /* --- FEATURES GRID --- */
-        .features {
-            padding: 50px 0 100px 0;
-            background: var(--surface-color);
-            position: relative;
-            z-index: 30; /* Above the road line */
-        }
-
-        .section-header {
-            text-align: center;
-            margin-bottom: 80px;
-        }
-
-        .section-header h2 {
-            font-size: 2.5rem;
-            margin-bottom: 16px;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 40px;
-        }
-
-        .card {
-            background: var(--glass);
-            border: 1px solid var(--border-color);
-            padding: 40px;
-            border-radius: 24px;
-            transition: all 0.3s ease;
-        }
-
-        .card:hover {
-            border-color: var(--text-primary);
-            background: rgba(255,255,255,0.05);
-        }
-
-        .icon-box {
-            width: 50px;
-            height: 50px;
-            background: #222;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 24px;
-            font-size: 1.2rem;
-        }
-
-        .card h3 {
-            font-size: 1.5rem;
-            margin-bottom: 12px;
-        }
-
-        .card p {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-        }
-
-        /* --- FOOTER --- */
-        footer {
-            padding: 60px 0;
-            background-color: var(--surface-color);
-            border-top: 1px solid var(--border-color);
-            text-align: center;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-        }
-
-        footer a {
-            color: var(--text-primary);
-            text-decoration: none;
-            margin: 0 10px;
-            transition: color 0.2s;
-        }
-
-        footer a:hover {
-            color: var(--accent-blue);
-        }
-
-        /* --- ANIMATIONS --- */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .hero h1 { font-size: 3rem; }
-            .input-group { flex-direction: column; padding: 16px; border-radius: 24px; }
-            .input-field { margin-bottom: 16px; text-align: center; width: 100%;}
-            .btn { width: 100%; }
-            .button-group { flex-direction: column; gap: 12px; width: 100%; max-width: 450px;}
-            .phone-mockup { height: 550px; width: 280px; margin-top: 40px; transform: none;}
-            .app-preview-container { margin-top: -100px; padding-bottom: 50px;}
-            .waitlist-form-container { padding: 0 16px; }
-        }
-    </style>
     <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-ERQR8GQCFY"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ERQR8GQCFY"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
 
-  gtag('config', 'G-ERQR8GQCFY');
-</script>
+      gtag('config', 'G-ERQR8GQCFY');
+    </script>
 </head>
-    
+
 <body>
+    <!-- Animated Background -->
+    <div class="gradient-bg"></div>
+    <div class="particles"></div>
+    
+    <!-- Custom Cursor -->
+    <div class="cursor"></div>
+    <div class="cursor-follower"></div>
 
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="logo">NOMVIA</div>
+        <ul class="nav-links">
+            <li><a href="#features">Features</a></li>
+            <li><a href="#stats">Problem</a></li>
+            <li><a href="#contact">Download</a></li>
+            <li><a href="https://github.com/Clay990/Nomvia" target="_blank">GitHub</a></li>
+        </ul>
+    </nav>
+
+    <!-- Hero Section -->
     <section class="hero">
-        <div class="road-line"></div>
-        <div class="container hero-content">
-            <span class="badge">SHIPYARD 2026 ENTRY</span>
-            <h1>The Operating System<br>for Modern Nomads.</h1>
-            <p>Safety, Community, and Utility. Join live convoys, find verified help on the road, and travel with confidence.</p>
+        <div class="geometric-shapes">
+            <div class="shape circle shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape circle shape-3"></div>
+        </div>
+        
+        <div style="position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1) 20%, rgba(255,255,255,0.1) 80%, transparent); transform: translateY(-50%); pointer-events: none;"></div>
+        
+        <div class="hero-content">
+            <h1>Meet People<br>Who Move</h1>
+            <p>A trust-based social network for van-lifers, digital nomads, and travelers. Find companions, share routes, and stay connected on the road.</p>
+            <div style="display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap; margin-top: 3rem;">
+                <a href="https://github.com/Clay990/Nomvia/releases" class="cta-button">Download Beta</a>
+                <a href="https://forms.gle/nomvia-beta-tester" class="cta-button-outline">Become a Tester</a>
+            </div>
+        </div>
+    </section>
 
-            <div class="waitlist-form-container">
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <h2 class="section-title reveal">Core Features</h2>
+        <p class="section-subtitle reveal">Built for nomads who value community and safety</p>
+        
+        <div class="features-grid">
+            <div class="feature-card reveal">
+                <div class="feature-number">01</div>
+                <h3>Convoy Feed</h3>
+                <p>Post your travel routes, find others heading the same direction, and join live journeys. See who's traveling from Mumbai to Goa this week.</p>
+            </div>
+            
+            <div class="feature-card reveal">
+                <div class="feature-number">02</div>
+                <h3>Connect (Dating)</h3>
+                <p>Swipe-based matching for nomads. Filter by travel pace (Fast/Slow/Steady), mode (Solo/Couple), and style (Off-grid/Campgrounds). Find partners who move like you.</p>
+            </div>
+            
+            <div class="feature-card reveal">
+                <div class="feature-number">03</div>
+                <h3>Campfire (Community)</h3>
+                <p>Join circles, share stories, ask questions, and attend meetups. Private group chats, wiki resources, and Q&A forums for the nomad community.</p>
+            </div>
+            
+            <div class="feature-card reveal">
+                <div class="feature-number">04</div>
+                <h3>Services Directory</h3>
+                <p>Find verified mechanics, electricians, solar techs, and carpenters who understand custom van builds. Location-based helper discovery with direct messaging.</p>
+            </div>
+            
+            <div class="feature-card reveal">
+                <div class="feature-number">05</div>
+                <h3>Trust-First Safety</h3>
+                <p>Strict 5-step verification with rig photo proof. Community promise keeps creeps and bots out. Verified badges for trusted members and professionals.</p>
+            </div>
+            
+            <div class="feature-card reveal">
+                <div class="feature-number">06</div>
+                <h3>Stories & Messaging</h3>
+                <p>24-hour expiring stories, private DMs, group circles, and real-time chat. Share your journey and stay connected with your nomad tribe.</p>
+            </div>
+        </div>
+    </section>
 
-                <form action="https://formspree.io/f/xkojprpd" method="POST" class="input-group">
-                    <input type="email" name="email" placeholder="Enter email for updates..." class="input-field" required>
-                    <button type="submit" class="btn btn-primary">
-                        Join Waitlist
-                    </button>
+    <!-- Stats Section -->
+    <section id="stats" class="stats">
+        <h2 class="section-title reveal">The Problem We Solve</h2>
+        <p class="section-subtitle reveal">Van life is freedom, but it can be isolating</p>
+        
+        <div class="stats-grid">
+            <div class="stat-item reveal">
+                <span class="stat-number" data-count="2">0</span>
+                <p class="stat-label">Days Until You Leave</p>
+                <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem;">You match with locals, but you're moving on</p>
+            </div>
+            
+            <div class="stat-item reveal">
+                <span class="stat-number" data-count="5">0</span>
+                <p class="stat-label">Core Features</p>
+                <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem;">Convoy, Connect, Campfire, Services, Profile</p>
+            </div>
+            
+            <div class="stat-item reveal">
+                <span class="stat-number" data-count="100">0</span>
+                <p class="stat-label">% Community Focus</p>
+                <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem;">Trust-first verification, safety, and support</p>
+            </div>
+            
+            <div class="stat-item reveal">
+                <span class="stat-number" data-count="24">0</span>
+                <p class="stat-label">Hour Stories</p>
+                <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem;">Share moments, discover others' journeys</p>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Tech Stack Section -->
+    <section class="features" style="background: #000;">
+        <h2 class="section-title reveal">Built With Modern Tech</h2>
+        <p class="section-subtitle reveal">Production-ready MVP for Shipyard 2026</p>
+        
+        <div class="features-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem;">
+            <div class="feature-card reveal" style="padding: 2rem; text-align: center;">
+                <h3 style="font-size: 1.2rem; margin-bottom: 0.5rem;">React Native</h3>
+                <p style="font-size: 0.9rem;">Cross-platform mobile</p>
+            </div>
+            
+            <div class="feature-card reveal" style="padding: 2rem; text-align: center;">
+                <h3 style="font-size: 1.2rem; margin-bottom: 0.5rem;">TypeScript</h3>
+                <p style="font-size: 0.9rem;">Type-safe development</p>
+            </div>
+            
+            <div class="feature-card reveal" style="padding: 2rem; text-align: center;">
+                <h3 style="font-size: 1.2rem; margin-bottom: 0.5rem;">Appwrite</h3>
+                <p style="font-size: 0.9rem;">Database & Auth backend</p>
+            </div>
+            
+            <div class="feature-card reveal" style="padding: 2rem; text-align: center;">
+                <h3 style="font-size: 1.2rem; margin-bottom: 0.5rem;">RevenueCat</h3>
+                <p style="font-size: 0.9rem;">Subscription monetization</p>
+            </div>
+            
+            <div class="feature-card reveal" style="padding: 2rem; text-align: center;">
+                <h3 style="font-size: 1.2rem; margin-bottom: 0.5rem;">Expo Router</h3>
+                <p style="font-size: 0.9rem;">File-based navigation</p>
+            </div>
+            
+            <div class="feature-card reveal" style="padding: 2rem; text-align: center;">
+                <h3 style="font-size: 1.2rem; margin-bottom: 0.5rem;">Lottie</h3>
+                <p style="font-size: 0.9rem;">Premium animations</p>
+            </div>
+        </div>
+    </section>
+    
+    <!-- App Preview Section -->
+    <section class="features" style="background: linear-gradient(180deg, #0a0a0a 0%, #000000 100%);">
+        <h2 class="section-title reveal">See It In Action</h2>
+        <p class="section-subtitle reveal">Actual UI from the current Alpha build</p>
+        
+        <div style="max-width: 400px; margin: 3rem auto; position: relative;">
+            <div class="reveal" style="border-radius: 30px; overflow: hidden; box-shadow: 0 40px 100px rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.1);">
+                <img src="https://github.com/Clay990/Nomvia/blob/main/assets/images/WhatsApp%20Image%202026-01-22%20at%2011.07.21%20AM.jpeg?raw=true" 
+                     alt="Nomvia App Interface" 
+                     style="width: 100%; height: auto; display: block;">
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 2rem;">
+            <p style="color: #888; font-size: 1rem; max-width: 600px; margin: 0 auto;">
+                Features trust-first onboarding, convoy feeds, swipe-based connections, community circles, and a verified services directory
+            </p>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section id="contact" class="hero" style="min-height: 60vh;">
+        <div class="hero-content reveal">
+            <h1 style="font-size: clamp(2.5rem, 6vw, 5rem);">Join the Beta</h1>
+            <p>Nomvia is live and available for download. Built for Shipyard 2026, designed for nomads everywhere.</p>
+            
+            <div style="margin-top: 3rem;">
+                <div style="display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap; margin-bottom: 3rem;">
+                    <a href="https://github.com/Clay990/Nomvia/releases" class="cta-button">
+                        Download APK
+                    </a>
+                    <a href="https://forms.gle/nomvia-beta-tester" class="cta-button-outline">
+                        Become a Tester
+                    </a>
+                    <a href="https://github.com/Clay990/Nomvia" target="_blank" class="cta-button-outline">
+                        View Source
+                    </a>
+                </div>
+                
+                <form action="https://formspree.io/f/xkojprpd" method="POST" style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; max-width: 600px; margin: 0 auto;">
+                    <input type="email" name="email" placeholder="Get updates on iOS launch..." required style="flex: 1; min-width: 300px; padding: 1.2rem 2rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 50px; color: white; font-size: 1rem;">
+                    <button type="submit" class="cta-button" style="margin: 0;">Notify Me</button>
                 </form>
-
-                <div class="button-group">
-                    <a href="https://github.com/Clay990/Nomvia/releases" class="btn btn-accent">
-                        <i class="fa-brands fa-android" style="margin-right: 8px; font-size: 1.2rem;"></i> Download Beta APK
-                    </a>
-                    <a href="https://github.com/Clay990/Nomvia" target="_blank" class="btn btn-secondary">
-                        <i class="fa-brands fa-github" style="margin-right: 8px; font-size: 1.2rem;"></i> View Code
-                    </a>
-                </div>
-            </div>
-
-        </div>
-    </section>
-
-    <div class="container app-preview-container">
-        <div class="phone-mockup">
-            <div class="screen-content">
-                <img src="https://github.com/Clay990/Nomvia/blob/main/assets/images/WhatsApp%20Image%202026-01-22%20at%2011.07.21%20AM.jpeg?raw=true"
-                     alt="Nomvia App Screenshot"
-                     class="screen-image">
-            </div>
-        </div>
-        <p style="margin-top: 32px; font-size: 0.9rem; color: var(--text-secondary); opacity: 0.8;">
-            <i class="fa-solid fa-circle-info" style="margin-right: 8px;"></i> Actual UI from the current Alpha build.
-        </p>
-    </div>
-
-    <section class="features">
-        <div class="container">
-            <div class="section-header">
-                <h2>Built for the Road</h2>
-                <p style="color: var(--text-secondary);">Three pillars of the nomadic experience.</p>
-            </div>
-
-            <div class="grid">
-                <div class="card">
-                    <div class="icon-box" style="color: var(--accent-blue);">
-                        <i class="fa-solid fa-route"></i>
-                    </div>
-                    <h3>Live Convoys</h3>
-                    <p>Don't drive alone. See who is heading your way in real-time. Join a pack for safety and shared experiences.</p>
-                </div>
-
-                <div class="card">
-                    <div class="icon-box" style="color: var(--accent-orange);">
-                        <i class="fa-solid fa-wrench"></i>
-                    </div>
-                    <h3>Service Hub</h3>
-                    <p>Breakdown anxiety is real. Find verified mechanics, solar pros, and parts swaps instantly. Includes an SOS beacon.</p>
-                </div>
-
-                <div class="card">
-                    <div class="icon-box" style="color: white;">
-                        <i class="fa-solid fa-passport"></i>
-                    </div>
-                    <h3>Verified Trust</h3>
-                    <p>Our "Digital Passport" system ensures you know who you are meeting. Powered by RevenueCat for secure verification.</p>
-                </div>
             </div>
         </div>
     </section>
 
-    <footer>
-        <div class="container">
-            <h3 style="margin-bottom: 16px; color: white;">Nomvia</h3>
-            <p style="margin-bottom: 24px;">Built with ❤️ and ☕ by Suraj Mondal.</p>
-            <div>
-                <a href="https://x.com/SurajMondal_Dev" target="_blank"><i class="fa-brands fa-x-twitter"></i> Twitter</a>
-                <a href="https://github.com/Clay990/Nomvia" target="_blank"><i class="fa-brands fa-github"></i> GitHub</a>
-            </div>
-            <p style="margin-top: 40px; font-size: 0.8rem; opacity: 0.5;">© 2026 Nomvia. All rights reserved.</p>
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="logo" style="font-size: 2.5rem; margin-bottom: 1rem;">NOMVIA</div>
+            <p style="color: #888; max-width: 600px; margin: 0 auto 1.5rem;">A trust-based social network for van-lifers and digital nomads. Built in public for RevenueCat Shipyard 2026.</p>
+            <p style="margin-top: 1rem;">
+                <a href="https://x.com/surajmondal_dev" target="_blank" style="color: #888; text-decoration: none; margin: 0 1rem; transition: color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">Twitter/X</a>
+                <a href="https://linkedin.com/in/suraj-mondal-245828245" target="_blank" style="color: #888; text-decoration: none; margin: 0 1rem; transition: color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">LinkedIn</a>
+                <a href="https://github.com/Clay990/Nomvia" target="_blank" style="color: #888; text-decoration: none; margin: 0 1rem; transition: color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">GitHub</a>
+                <a href="https://github.com/Clay990/Nomvia/releases" style="color: #888; text-decoration: none; margin: 0 1rem; transition: color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">Download</a>
+            </p>
+            <p style="margin-top: 2rem; color: #666; font-size: 0.9rem;">&copy; 2026 Nomvia. Built with ❤️ and caffeine by Suraj Mondal.</p>
         </div>
     </footer>
 
+    <script src="premium-script.js"></script>
 </body>
 </html>

@@ -6,6 +6,8 @@ import { WebView } from "react-native-webview";
 import * as Location from 'expo-location';
 import { MapService, MapItem } from "./services/map";
 import WeatherWidget from "../components/WeatherWidget";
+import { CURRENT_USER_LOCATION } from "./utils/location";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const htmlContent = `
 <!DOCTYPE html>
@@ -146,26 +148,59 @@ export default function MapScreen() {
 
   useEffect(() => {
     initMap();
+    loadSharingPreference();
   }, []);
+
+  const loadSharingPreference = async () => {
+      try {
+          const saved = await AsyncStorage.getItem('is_sharing_location');
+          if (saved === 'true') {
+              setIsSharing(true);
+          }
+      } catch (e) {
+          console.log('Error loading sharing preference', e);
+      }
+  };
 
   const initMap = async () => {
       try {
           const { status } = await Location.requestForegroundPermissionsAsync();
           if (status !== 'granted') {
               console.log('Location permission denied, using default.');
-              loadMapData(); 
+              setMyLocation({ lat: CURRENT_USER_LOCATION.latitude, long: CURRENT_USER_LOCATION.longitude });
+              loadMapData(CURRENT_USER_LOCATION.latitude, CURRENT_USER_LOCATION.longitude); 
               return;
           }
 
-          const location = await Location.getCurrentPositionAsync({});
+          const lastKnown = await Location.getLastKnownPositionAsync({});
+          if (lastKnown) {
+              const { latitude, longitude } = lastKnown.coords;
+              setMyLocation({ lat: latitude, long: longitude });
+              loadMapData(latitude, longitude);
+          }
+
+          const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
           const { latitude, longitude } = location.coords;
           
           setMyLocation({ lat: latitude, long: longitude });
-          loadMapData(latitude, longitude);
+          
+          // Only reload data if we didn't have a last known location, 
+          // or if the distance is significant (optional optimization, here we just reload to be safe)
+          if (!lastKnown) {
+             loadMapData(latitude, longitude);
+          } else {
+             // If we moved significantly, we might want to reload. 
+             // For now, let's just update the center (setMyLocation does this via useEffect)
+             // and silently refresh data
+             loadMapData(latitude, longitude);
+          }
 
       } catch (error) {
           console.log('Error getting location', error);
-          loadMapData();
+          if (!myLocation) { 
+            setMyLocation({ lat: CURRENT_USER_LOCATION.latitude, long: CURRENT_USER_LOCATION.longitude });
+            loadMapData(CURRENT_USER_LOCATION.latitude, CURRENT_USER_LOCATION.longitude);
+          }
       }
   };
 
@@ -222,6 +257,13 @@ export default function MapScreen() {
       });
   };
 
+  const handleToggleSharing = (value: boolean) => {
+      setIsSharing(value);
+      AsyncStorage.setItem('is_sharing_location', String(value)).catch(e => 
+        console.log('Error saving sharing preference', e)
+      );
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
@@ -250,7 +292,7 @@ export default function MapScreen() {
                 </View>
                 <Switch
                     value={isSharing}
-                    onValueChange={setIsSharing}
+                    onValueChange={handleToggleSharing}
                     trackColor={{ false: "#E5E7EB", true: "#000" }}
                     thumbColor={"#FFF"}
                 />

@@ -146,6 +146,38 @@ export const MapService = {
             console.error("Error fetching map items", error);
         }
 
+        if (items.length === 0) {
+            items.push(
+                {
+                    id: 'mock_1',
+                    type: 'nomad',
+                    title: 'Sarah (Demo)',
+                    desc: 'Digital Nomad',
+                    lat: centerLat + 0.002,
+                    long: centerLon + 0.002,
+                    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200'
+                },
+                {
+                    id: 'mock_2',
+                    type: 'event',
+                    title: 'Bonfire Night',
+                    desc: 'Tonight at 8PM',
+                    lat: centerLat - 0.002,
+                    long: centerLon + 0.001,
+                    icon: '🔥'
+                },
+                {
+                    id: 'mock_3',
+                    type: 'service',
+                    title: 'Local Cafe',
+                    desc: 'Great WiFi',
+                    lat: centerLat + 0.001,
+                    long: centerLon - 0.002,
+                    icon: '☕'
+                }
+            );
+        }
+
         return items;
     },
 
