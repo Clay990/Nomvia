@@ -5,9 +5,12 @@ export interface Post {
     $createdAt: string;
     $updatedAt: string;
     userId: string;
-    type: 'none' | 'map' | 'image';
+    type: 'none' | 'map' | 'image' | 'meetup' | 'discussion' | 'qa' | 'resource';
     content: string;
+    title?: string;
+    meetupTime?: string;
     image?: string; 
+    link?: string;
     tag?: string;
     from?: string;
     to?: string;
@@ -66,4 +69,16 @@ export interface User {
     instagram?: string;
     youtube?: string;
     website?: string;
+}
+
+export interface Message {
+    $id: string;
+    circleId?: string;
+    receiverId?: string;
+    userId: string;
+    content: string;
+    type: 'text' | 'image' | 'system';
+    user_name?: string;
+    user_avatar?: string;
+    createdAt: string;
 }

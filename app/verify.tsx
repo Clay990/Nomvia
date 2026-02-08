@@ -82,7 +82,7 @@ export default function VerifyScreen() {
           <Text style={styles.title}>Check your Inbox</Text>
 
           <Text style={styles.subtitle}>
-            We've sent a 6-digit verification code to{"\n"}
+            We&apos;ve sent a 6-digit verification code to{"\n"}
             <Text style={styles.emailHighlight}>{email}</Text>
           </Text>
 
@@ -115,7 +115,7 @@ export default function VerifyScreen() {
 
           <TouchableOpacity style={styles.resendLink} onPress={handleResend}>
             <Text style={styles.resendText}>
-              Didn't receive the code? <Text style={styles.resendBold}>Resend</Text>
+              Didn&apos;t receive the code? <Text style={styles.resendBold}>Resend</Text>
             </Text>
           </TouchableOpacity>
         </View>

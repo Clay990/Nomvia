@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Animated, Pressable, Share, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { Alert, Animated, Pressable, Share, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View, Linking } from 'react-native';
 import { Post } from '../app/types';
 import { calculateETA } from '../app/utils/location';
 import { useTheme } from '../context/ThemeContext';
@@ -27,6 +27,10 @@ export default function PostCard({ post, onLike, onComment, onOpen, onMoreOption
     const [likeCount, setLikeCount] = useState(post.likesCount || 0);
     const [bookmarked, setBookmarked] = useState(false);
     
+    const [pollVote, setPollVote] = useState<number | null>(null);
+    const [isGoing, setIsGoing] = useState(false);
+    const [attendees, setAttendees] = useState(post.likesCount || 0);
+
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const heartScale = useRef(new Animated.Value(0)).current;
 
@@ -36,6 +40,92 @@ export default function PostCard({ post, onLike, onComment, onOpen, onMoreOption
     useEffect(() => {
         Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start();
     }, []);
+
+    const parsePoll = (text: string) => {
+        if (!text) return { cleanContent: '', pollData: null };
+        const parts = text.split('///POLL///');
+        if (parts.length > 1) {
+            try {
+                return { cleanContent: parts[0].trim(), pollData: JSON.parse(parts[1]) };
+            } catch (e) {
+                return { cleanContent: text, pollData: null };
+            }
+        }
+        return { cleanContent: text, pollData: null };
+    };
+
+    const { cleanContent, pollData } = parsePoll(post.content);
+
+    let displayTitle = post.title;
+    let displayType = post.tag || 'POST';
+    let displayBody = cleanContent;
+    let displayTime = post.meetupTime;
+
+    if (!displayTitle) {
+        const firstLine = cleanContent.split('\n')[0];
+        if (firstLine.startsWith('[EVENT:')) {
+            const parts = firstLine.replace('[EVENT:', '').replace(']', '').split('@');
+            displayTitle = parts[0]?.trim();
+            if (parts[1]) {
+                const timeLoc = parts[1].split(' in ');
+                displayTime = timeLoc[0]?.trim();
+            }
+            displayType = 'MEETUP';
+            displayBody = cleanContent.substring(firstLine.length).trim();
+        } else if (firstLine.startsWith('[QUESTION:')) {
+            displayTitle = firstLine.replace('[QUESTION:', '').replace(']', '').trim();
+            displayType = 'Q&A';
+            displayBody = cleanContent.substring(firstLine.length).trim();
+        } else if (firstLine.startsWith('[RESOURCE:')) {
+            displayTitle = firstLine.replace('[RESOURCE:', '').replace(']', '').trim();
+            displayType = 'RESOURCE';
+            displayBody = cleanContent.substring(firstLine.length).trim();
+        } else if (firstLine.startsWith('[TOPIC:')) {
+            const parts = firstLine.replace('[TOPIC:', '').replace(']', '').split(' in ');
+            displayTitle = parts[0]?.trim();
+            if (parts[1]) displayType = parts[1].trim().toUpperCase();
+            displayBody = cleanContent.substring(firstLine.length).trim();
+        }
+    }
+
+    const renderStyledText = (text: string) => {
+        const words = text.split(/(\s+)/); 
+        return (
+            <Text style={[styles.description, { color: colors.text }]}>
+                {words.map((word, index) => {
+                    if (word.startsWith('@')) {
+                        return <Text key={index} style={{ color: colors.primary, fontWeight: '700' }}>{word}</Text>;
+                    } else if (word.startsWith('#')) {
+                        return <Text key={index} style={{ color: colors.primary, fontWeight: '700' }}>{word}</Text>;
+                    }
+                    return <Text key={index}>{word}</Text>;
+                })}
+            </Text>
+        );
+    };
+
+    const handleLinkPress = async () => {
+        if (post.link) {
+            Haptics.selectionAsync();
+            try {
+                await Linking.openURL(post.link);
+            } catch (e) {
+                Alert.alert("Error", "Could not open link.");
+            }
+        }
+    };
+
+    const handleRSVP = () => {
+        Haptics.selectionAsync();
+        if (isGoing) {
+            setAttendees(prev => prev - 1);
+            setIsGoing(false);
+        } else {
+            setAttendees(prev => prev + 1);
+            setIsGoing(true);
+            Alert.alert("You're in!", "See you at the meetup.");
+        }
+    };
 
     const progressPercent = (post.isLive && post.totalKm && post.completedKm)
         ? (post.completedKm / post.totalKm) * 100
@@ -138,7 +228,7 @@ export default function PostCard({ post, onLike, onComment, onOpen, onMoreOption
             accessible={true}
             accessibilityLabel={`Post by ${post.user_name || 'Anonymous'}`}
         >
-            {post.type !== 'none' && (post.image || post.mediaUrls?.[0]) && (
+            {(post.image || post.mediaUrls?.[0]) && (
                 <TouchableWithoutFeedback onPress={handleDoubleTap}>
                     <View style={styles.mediaContainer}>
                         <Image 
@@ -151,7 +241,6 @@ export default function PostCard({ post, onLike, onComment, onOpen, onMoreOption
                         />
                         {post.tag && (
                             <View style={styles.tagBadge}>
-                                {post.type === 'map' && <MaterialCommunityIcons name="map-marker-path" size={12} color="#FFF" style={{ marginRight: 4 }} />}
                                 <Text style={styles.tagText}>{post.tag}</Text>
                             </View>
                         )}
@@ -174,9 +263,14 @@ export default function PostCard({ post, onLike, onComment, onOpen, onMoreOption
                     </TouchableOpacity>
                     
                     <View style={{ flex: 1 }}>
-                        <TouchableOpacity onPress={goToProfile} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <TouchableOpacity onPress={goToProfile} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                             <Text style={[styles.userName, { color: colors.text }]}>{post.user_name || 'Anonymous'}</Text>
-                            <MaterialCommunityIcons name="check-decagram" size={14} color={colors.primary} accessibilityLabel="Verified User" />
+                            <MaterialCommunityIcons name="check-decagram" size={14} color={colors.primary} />
+                            <View style={{ backgroundColor: isDark ? '#333' : '#F3F4F6', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
+                                <Text style={{ fontSize: 10, fontWeight: '700', color: colors.subtext }}>
+                                    Lvl {Math.max(1, (post.user_name?.length || 0) % 10)}
+                                </Text>
+                            </View>
                         </TouchableOpacity>
                         
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
@@ -193,24 +287,10 @@ export default function PostCard({ post, onLike, onComment, onOpen, onMoreOption
                                     </View>
                                 </>
                             )}
-                            {(post.mutualConnections || 0) > 0 && (
-                                <>
-                                    <View style={styles.dotSeparator} />
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-                                        <MaterialCommunityIcons name="account-group-outline" size={10} color={colors.subtext} />
-                                        <Text style={{ fontSize: 11, color: colors.subtext }}>{post.mutualConnections} mutuals</Text>
-                                    </View>
-                                </>
-                            )}
                         </View>
                     </View>
                     
-                    <TouchableOpacity 
-                        onPress={handleMoreOptions} 
-                        style={{ padding: 4 }}
-                        accessibilityLabel="More options"
-                        accessibilityRole="button"
-                    >
+                    <TouchableOpacity onPress={handleMoreOptions} style={{ padding: 4 }}>
                         <MaterialCommunityIcons name="dots-horizontal" size={20} color={colors.subtext} />
                     </TouchableOpacity>
                 </View>
@@ -249,9 +329,116 @@ export default function PostCard({ post, onLike, onComment, onOpen, onMoreOption
                     </View>
                 )}
 
-                <Text style={[styles.description, { color: colors.text }]}>
-                    {post.content}
-                </Text>
+                {!post.image && displayType && (
+                    <View style={{ flexDirection: 'row', marginBottom: 8 }}>
+                        <View style={[styles.miniTag, { backgroundColor: isDark ? '#333' : '#F3F4F6' }]}>
+                            <Text style={{ fontSize: 10, fontWeight: '700', color: colors.text }}>{displayType}</Text>
+                        </View>
+                    </View>
+                )}
+
+                {displayTitle && (
+                    <Text style={{ fontSize: 18, fontWeight: '800', color: colors.text, marginBottom: 8 }}>
+                        {displayTitle}
+                    </Text>
+                )}
+                {displayTime && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                        <MaterialCommunityIcons name="calendar-clock" size={16} color={colors.primary} />
+                        <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 14 }}>{displayTime}</Text>
+                    </View>
+                )}
+
+                {renderStyledText(displayBody)}
+
+                {post.link && (
+                    <TouchableOpacity 
+                        onPress={handleLinkPress}
+                        style={{ 
+                            marginTop: 12, 
+                            padding: 12, 
+                            backgroundColor: isDark ? '#333' : '#F3F4F6', 
+                            borderRadius: 12, 
+                            flexDirection: 'row', 
+                            alignItems: 'center', 
+                            gap: 8 
+                        }}
+                    >
+                        <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.card, justifyContent: 'center', alignItems: 'center' }}>
+                            <MaterialCommunityIcons name="link-variant" size={18} color={colors.primary} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={{ fontWeight: '600', color: colors.text, fontSize: 13 }}>Visit Resource</Text>
+                            <Text style={{ color: colors.subtext, fontSize: 11 }} numberOfLines={1}>{post.link}</Text>
+                        </View>
+                        <MaterialCommunityIcons name="open-in-new" size={16} color={colors.subtext} />
+                    </TouchableOpacity>
+                )}
+
+                {pollData && pollData.options && (
+                    <View style={{ marginTop: 12, gap: 8 }}>
+                        {pollData.options.map((opt: any, idx: number) => {
+                            const isSelected = pollVote === idx;
+                            const votePercent = Math.floor(Math.random() * 100); 
+                            return (
+                                <TouchableOpacity 
+                                    key={idx} 
+                                    onPress={() => { Haptics.selectionAsync(); setPollVote(idx); }}
+                                    style={{ 
+                                        padding: 12, 
+                                        borderRadius: 12, 
+                                        borderWidth: 1, 
+                                        borderColor: isSelected ? colors.primary : colors.border,
+                                        backgroundColor: isSelected ? 'rgba(0,0,0,0.02)' : 'transparent',
+                                        overflow: 'hidden'
+                                    }}
+                                >
+                                    {pollVote !== null && (
+                                         <View style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: `${votePercent}%`, backgroundColor: isSelected ? 'rgba(26, 46, 5, 0.1)' : 'rgba(0,0,0,0.03)' }} />
+                                    )}
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                        <Text style={{ color: colors.text, fontWeight: isSelected ? '700' : '400' }}>{opt.text}</Text>
+                                        {pollVote !== null && <Text style={{ color: colors.subtext, fontSize: 12 }}>{votePercent}%</Text>}
+                                    </View>
+                                </TouchableOpacity>
+                            );
+                        })}
+                        <Text style={{ fontSize: 11, color: colors.subtext, textAlign: 'right', marginTop: 4 }}>
+                            {pollVote !== null ? '124 votes • Ends in 2 days' : 'Select an option to vote'}
+                        </Text>
+                    </View>
+                )}
+
+                {post.type === 'meetup' && (
+                    <View style={{ marginTop: 12, padding: 12, backgroundColor: isDark ? '#333' : '#F3F4F6', borderRadius: 12 }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                            <View>
+                                <Text style={{ fontWeight: '700', color: colors.text, fontSize: 14 }}>📅 Event RSVP</Text>
+                                <Text style={{ color: colors.subtext, fontSize: 12 }}>{attendees} nomads attending</Text>
+                            </View>
+                            <View style={{ flexDirection: 'row', paddingLeft: 8 }}>
+                                {[1,2,3].map(i => (
+                                    <View key={i} style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: colors.border, borderWidth: 2, borderColor: colors.card, marginLeft: -8 }} />
+                                ))}
+                            </View>
+                        </View>
+                        <TouchableOpacity 
+                            onPress={handleRSVP}
+                            style={{ 
+                                backgroundColor: isGoing ? colors.text : colors.card, 
+                                paddingVertical: 10, 
+                                borderRadius: 8, 
+                                alignItems: 'center',
+                                borderWidth: 1,
+                                borderColor: colors.text
+                            }}
+                        >
+                            <Text style={{ color: isGoing ? colors.background : colors.text, fontWeight: '700' }}>
+                                {isGoing ? "✓ You're Going" : "I'm Going"}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
 
                 <View style={[styles.actionRow, { borderTopColor: isDark ? '#333' : '#F3F4F6' }]}>
                     <TouchableOpacity 

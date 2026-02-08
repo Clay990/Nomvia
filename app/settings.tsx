@@ -14,12 +14,16 @@ import {
 } from "react-native";
 import { account } from "../lib/appwrite";
 import { useTheme } from "../context/ThemeContext";
+import { useRevenueCat } from "../context/RevenueCatContext";
+import { useAuth } from "../context/AuthContext";
 
 const ACCOUNT_CREATED = "January 2024"; 
 
 export default function SettingsScreen() {
   const router = useRouter();
   const { isDark, toggleTheme, colors } = useTheme();
+  const { isPro, presentCustomerCenter, restorePurchases } = useRevenueCat();
+  const { logout } = useAuth();
   const [pushEnabled, setPushEnabled] = useState(true);
   const [locationEnabled, setLocationEnabled] = useState(true);
 
@@ -35,15 +39,7 @@ export default function SettingsScreen() {
           text: "Log Out", 
           style: "destructive",
           onPress: async () => {
-            try {
-              await account.deleteSession('current');
-              await SecureStore.deleteItemAsync('session_active');
-              router.replace('/login');
-            } catch (error) {
-              console.error("Logout failed:", error);
-              await SecureStore.deleteItemAsync('session_active');
-              router.replace('/login');
-            }
+            await logout();
           }
         }
       ]
@@ -62,7 +58,6 @@ export default function SettingsScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         
-        {/* Account Section */}
         <View style={styles.section}>
             <Text style={styles.sectionTitle}>Account</Text>
             <TouchableOpacity style={styles.row} onPress={() => router.push('/edit-profile')}>
@@ -77,6 +72,35 @@ export default function SettingsScreen() {
                 <View style={styles.rowLeft}>
                     <Feather name="shield" size={22} color={colors.icon} />
                     <Text style={styles.rowLabel}>Privacy & Security</Text>
+                </View>
+                <Feather name="chevron-right" size={20} color={colors.subtext} />
+            </TouchableOpacity>
+        </View>
+
+        <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Membership</Text>
+            <View style={styles.row}>
+                <View style={styles.rowLeft}>
+                    <Feather name="star" size={22} color={isPro ? "#F59E0B" : colors.icon} />
+                    <Text style={styles.rowLabel}>Nomvia Pro</Text>
+                </View>
+                <Text style={{ color: isPro ? "#F59E0B" : colors.subtext, fontWeight: '600' }}>
+                  {isPro ? "Active" : "Free Plan"}
+                </Text>
+            </View>
+            <View style={styles.divider} />
+            <TouchableOpacity style={styles.row} onPress={presentCustomerCenter}>
+                <View style={styles.rowLeft}>
+                    <Feather name="credit-card" size={22} color={colors.icon} />
+                    <Text style={styles.rowLabel}>Manage Subscription</Text>
+                </View>
+                <Feather name="chevron-right" size={20} color={colors.subtext} />
+            </TouchableOpacity>
+             <View style={styles.divider} />
+            <TouchableOpacity style={styles.row} onPress={restorePurchases}>
+                <View style={styles.rowLeft}>
+                    <Feather name="refresh-cw" size={22} color={colors.icon} />
+                    <Text style={styles.rowLabel}>Restore Purchases</Text>
                 </View>
                 <Feather name="chevron-right" size={20} color={colors.subtext} />
             </TouchableOpacity>

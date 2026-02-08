@@ -88,7 +88,7 @@ export default function LoginScreen() {
 
           <View style={styles.header}>
             <Text style={styles.title}>Welcome back</Text>
-            <Text style={styles.subtitle}>Let's get you back on the road.</Text>
+            <Text style={styles.subtitle}>Let&apos;s get you back on the road.</Text>
           </View>
 
           <View style={styles.form}>
@@ -158,7 +158,7 @@ export default function LoginScreen() {
 
             <TouchableOpacity style={styles.loginLink} onPress={() => router.push('/signup')}>
               <Text style={styles.loginText}>
-                Don't have an account? <Text style={{fontWeight: '700', textDecorationLine: 'underline'}}>Sign up</Text>
+                Don&apos;t have an account? <Text style={{fontWeight: '700', textDecorationLine: 'underline'}}>Sign up</Text>
               </Text>
             </TouchableOpacity>
           </View>

@@ -7,5 +7,9 @@ export const APPWRITE_CONFIG = {
         STORIES: 'stories',
         COMMENTS: 'comments',
         LIKES: 'likes',
+        SWIPES: 'swipes',
+        CIRCLES: 'circles',
+        MEMBERSHIPS: 'memberships',
+        MESSAGES: 'messages',
     }
 };

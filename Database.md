@@ -44,7 +44,10 @@ This file serves as the source of truth for the Appwrite Database schema.
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `userId` | String | 36 | Yes | No | Relationship to User ID |
 | `type` | String | 32 | Yes | No | 'none', 'map', 'image' |
+| `title` | String | 128 | No | No | Post title |
 | `content` | String | 5000 | Yes | No | Post body/description |
+| `link` | Url | - | No | No | External link for resources |
+| `meetupTime` | String | 128 | No | No | Date/Time string for meetups |
 | `image` | Url | - | No | No | Post image URL (Legacy, prefer mediaUrls) |
 | `tag` | String | 64 | No | No | Context tag (e.g. "VAN LIFE") |
 | `from` | String | 128 | No | No | Journey start point |
@@ -70,13 +73,24 @@ This file serves as the source of truth for the Appwrite Database schema.
 
 ### 3. Matches (`matches`)
 **Collection ID:** `matches`
-**Permissions:** Read: Users involved, Write: Users involved.
+**Permissions:** Read: Users involved, Write: System/Function (or Users for MVP).
 
 | Attribute Name | Type | Size | Required | Array | Description |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `senderId` | String | 36 | Yes | No | User who swiped right |
-| `receiverId` | String | 36 | Yes | No | User who was liked |
-| `status` | String | 32 | Yes | No | 'pending', 'accepted', 'rejected' |
+| `userA` | String | 36 | Yes | No | First user ID |
+| `userB` | String | 36 | Yes | No | Second user ID |
+| `timestamp` | Datetime | - | Yes | No | Match creation time |
+
+### 12. Swipes (`swipes`)
+**Collection ID:** `swipes`
+**Permissions:** Read: Users, Write: Users.
+
+| Attribute Name | Type | Size | Required | Array | Description |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `initiatorId` | String | 36 | Yes | No | User who swiped |
+| `targetId` | String | 36 | Yes | No | User being swiped on |
+| `type` | String | 32 | Yes | No | 'like', 'pass' |
+| `timestamp` | Datetime | - | Yes | No | Swipe time |
 
 ### 4. Comments (`comments`)
 **Collection ID:** `comments`
@@ -140,6 +154,47 @@ This file serves as the source of truth for the Appwrite Database schema.
 | `expiresAt` | Datetime | - | Yes | No | Expiration time (24h) |
 | `likes` | Integer | - | No | No | Number of likes |
 | `views` | Integer | - | No | No | Number of views |
+
+### 9. Circles (`circles`)
+**Collection ID:** `circles`
+**Permissions:** Read: Any, Write: Owner
+
+| Attribute Name | Type | Size | Required | Array | Description |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `name` | String | 128 | Yes | No | Name of the circle |
+| `description` | String | 1000 | No | No | Description |
+| `image` | Url | - | No | No | Cover image |
+| `isPrivate` | Boolean | - | Yes | No | Is invite only? |
+| `inviteCode` | String | 16 | No | No | Code for joining |
+| `membersCount` | Integer | - | No | No | Count of members |
+| `ownerId` | String | 36 | Yes | No | Creator ID |
+| `createdAt` | Datetime | - | Yes | No | Creation time |
+
+### 10. Memberships (`memberships`)
+**Collection ID:** `memberships`
+**Permissions:** Read: Any, Write: Users
+
+| Attribute Name | Type | Size | Required | Array | Description |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `circleId` | String | 36 | Yes | No | Circle ID |
+| `userId` | String | 36 | Yes | No | User ID |
+| `role` | String | 32 | Yes | No | 'admin', 'member' |
+| `joinedAt` | Datetime | - | Yes | No | Join time |
+
+### 11. Messages (`messages`)
+**Collection ID:** `messages`
+**Permissions:** Read: Members (for circles) or Receiver/Sender (for DMs), Write: Users
+
+| Attribute Name | Type | Size | Required | Array | Description |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `circleId` | String | 36 | No | No | Target Circle ID (Group Chat) |
+| `receiverId` | String | 36 | No | No | Target User ID (Direct Message) |
+| `userId` | String | 36 | Yes | No | Sender ID |
+| `content` | String | 5000 | Yes | No | Message content |
+| `type` | String | 32 | Yes | No | 'text', 'image', 'system' |
+| `user_name` | String | 128 | No | No | Cached Sender Name |
+| `user_avatar` | Url | - | No | No | Cached Sender Avatar |
+| `createdAt` | Datetime | - | Yes | No | Creation time |
 
 ## Indexing Strategy
 

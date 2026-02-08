@@ -75,7 +75,9 @@ export const StoriesService = {
                     distance: 'Nearby',
                     type: doc.type || 'image',
                     duration: doc.duration || 5000,
-                    views: doc.views || 0
+                    views: doc.views || 0,
+                    likesCount: doc.likes || 0,
+                    commentsCount: doc.commentsCount || 0
                 };
             });
 
@@ -190,6 +192,15 @@ export const StoriesService = {
     async replyToStory(storyId: string, text: string) {
         try {
             const user = await account.get();
+            let userName = user.name || 'Anonymous';
+            let userAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=random`;
+
+            try {
+                 const userDoc = await databases.getDocument(DATABASE_ID, 'users', user.$id);
+                 if (userDoc?.avatar) userAvatar = userDoc.avatar;
+                 if (userDoc?.username) userName = userDoc.username;
+            } catch(_) {}
+
             // In a real app, this would create a message in the MESSAGES collection
             // linked to the story author. For MVP, we save to COMMENTS with a flag.
             await databases.createDocument(
@@ -197,13 +208,26 @@ export const StoriesService = {
                 APPWRITE_CONFIG.COLLECTIONS.COMMENTS,
                 ID.unique(),
                 {
-                    storyId: storyId,
+                    postId: storyId,
                     userId: user.$id,
                     content: text,
-                    type: 'story_reply',
-                    createdAt: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
+                    likesCount: 0,
+                    user_name: userName,
+                    user_avatar: userAvatar
                 }
             );
+
+            try {
+                const story = await databases.getDocument(DATABASE_ID, STORY_COLLECTION_ID, storyId);
+                const currentCount = story.commentsCount || 0;
+                await databases.updateDocument(DATABASE_ID, STORY_COLLECTION_ID, storyId, {
+                    commentsCount: currentCount + 1
+                });
+            } catch (e) {
+                console.log("Failed to increment story comments count", e);
+            }
+
             return true;
         } catch (error) {
             console.error('Error replying to story:', error);

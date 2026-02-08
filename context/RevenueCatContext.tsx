@@ -1,0 +1,155 @@
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Platform, Alert } from 'react-native';
+import Purchases, { CustomerInfo, PurchasesPackage } from 'react-native-purchases';
+import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
+
+// API Keys - In a real app, these should be in environment variables
+const API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY || '';
+
+const ENTITLEMENT_ID = 'Nomvia Pro';
+
+interface RevenueCatContextType {
+  isPro: boolean;
+  customerInfo: CustomerInfo | null;
+  currentOffering: PurchasesPackage[] | null;
+  restorePurchases: () => Promise<void>;
+  presentPaywall: () => Promise<boolean>; 
+  presentCustomerCenter: () => Promise<void>;
+}
+
+const RevenueCatContext = createContext<RevenueCatContextType | undefined>(undefined);
+
+export function RevenueCatProvider({ children }: { children: React.ReactNode }) {
+  const [isPro, setIsPro] = useState(false);
+  const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
+  const [currentOffering, setCurrentOffering] = useState<PurchasesPackage[] | null>(null);
+
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  useEffect(() => {
+    initRevenueCat();
+  }, []);
+
+  const initRevenueCat = async () => {
+    try {
+      if (Platform.OS === 'android') {
+        await Purchases.configure({ apiKey: API_KEY });
+      } else {
+        await Purchases.configure({ apiKey: API_KEY });
+      }
+      setIsInitialized(true);
+
+      const info = await Purchases.getCustomerInfo();
+      setCustomerInfo(info);
+      checkEntitlements(info);
+      try {
+        const offerings = await Purchases.getOfferings();
+        if (offerings.current && offerings.current.availablePackages.length > 0) {
+          setCurrentOffering(offerings.current.availablePackages);
+        }
+      } catch (e) {
+        console.error("Error fetching offerings", e);
+      }
+
+    } catch (e) {
+      console.warn("RevenueCat init error: Native module might be missing. If you are in Expo Go, this is expected. You need a Development Build for RevenueCat.", e);
+    }
+  };
+
+  const checkEntitlements = (info: CustomerInfo) => {
+    if (typeof info.entitlements.active[ENTITLEMENT_ID] !== "undefined") {
+      setIsPro(true);
+    } else {
+      setIsPro(false);
+    }
+  };
+
+  const restorePurchases = async () => {
+    if (!isInitialized) {
+        Alert.alert("Not Available", "Billing is not initialized. Please ensure you are running a Development Build.");
+        return;
+    }
+    try {
+      const info = await Purchases.restorePurchases();
+      setCustomerInfo(info);
+      checkEntitlements(info);
+      if (typeof info.entitlements.active[ENTITLEMENT_ID] !== "undefined") {
+        Alert.alert("Success", "Your purchases have been restored.");
+      } else {
+        Alert.alert("Notice", "No active subscriptions found to restore.");
+      }
+    } catch (e: any) {
+      Alert.alert("Error", e.message);
+    }
+  };
+
+  const presentPaywall = async (): Promise<boolean> => {
+    if (!isInitialized) {
+        Alert.alert("Not Available", "Billing is not initialized. Please ensure you are running a Development Build.");
+        return false;
+    }
+    try {
+      const paywallResult = await RevenueCatUI.presentPaywall({
+        displayCloseButton: true,
+      });
+
+      if (paywallResult === PAYWALL_RESULT.PURCHASED || paywallResult === PAYWALL_RESULT.RESTORED) {
+          const info = await Purchases.getCustomerInfo();
+          setCustomerInfo(info);
+          checkEntitlements(info);
+          return true;
+      }
+      return false;
+    } catch (e) {
+      console.error("Paywall error", e);
+      return false;
+    }
+  };
+
+  const presentCustomerCenter = async () => {
+      if (!isInitialized) {
+          Alert.alert("Not Available", "Billing is not initialized. Please ensure you are running a Development Build.");
+          return;
+      }
+      try {
+          await RevenueCatUI.presentCustomerCenter();
+      } catch(e) {
+          console.error("Error presenting customer center", e);
+      }
+  }
+
+  useEffect(() => {
+    if (!isInitialized) return;
+    
+    const customerInfoUpdated = (info: CustomerInfo) => {
+      setCustomerInfo(info);
+      checkEntitlements(info);
+    };
+    
+    Purchases.addCustomerInfoUpdateListener(customerInfoUpdated);
+
+    return () => {
+    };
+  }, [isInitialized]);
+
+  return (
+    <RevenueCatContext.Provider value={{ 
+      isPro, 
+      customerInfo, 
+      currentOffering, 
+      restorePurchases, 
+      presentPaywall,
+      presentCustomerCenter 
+    }}>
+      {children}
+    </RevenueCatContext.Provider>
+  );
+}
+
+export const useRevenueCat = () => {
+  const context = useContext(RevenueCatContext);
+  if (!context) {
+    throw new Error('useRevenueCat must be used within a RevenueCatProvider');
+  }
+  return context;
+};

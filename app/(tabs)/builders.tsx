@@ -9,7 +9,8 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import LockdownOverlay from '../../components/LockdownOverlay';
+import { useRevenueCat } from "../../context/RevenueCatContext";
+import { useTheme } from "../../context/ThemeContext";
 
 const HELP_CATEGORIES = [
   { id: 1, label: "Mechanics", icon: "wrench", count: 12, dist: "5 km" },
@@ -70,13 +71,23 @@ const SPARE_PARTS = [
 
 export default function BuildersScreen() {
   const [search, setSearch] = useState("");
+  const { isPro, presentPaywall } = useRevenueCat();
+  const { colors, isDark } = useTheme();
+  const styles = getStyles(colors);
+
+  const handleProAction = async (action?: () => void) => {
+    if (isPro) {
+      if (action) action();
+    } else {
+      await presentPaywall();
+    }
+  };
 
   return (
     <View style={styles.container}>
-      <LockdownOverlay />
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Service Hub</Text>
-        <TouchableOpacity style={styles.sosButton}>
+        <TouchableOpacity style={styles.sosButton} onPress={() => handleProAction(() => console.log('SOS triggered'))}>
            <MaterialCommunityIcons name="alert-circle-outline" size={20} color="#FFF" />
            <Text style={styles.sosText}>SOS Help</Text>
         </TouchableOpacity>
@@ -84,10 +95,10 @@ export default function BuildersScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.searchSection}>
             <View style={styles.searchContainer}>
-                <MaterialCommunityIcons name="magnify" size={20} color="#6B7280" style={{marginRight: 8}} />
+                <MaterialCommunityIcons name="magnify" size={20} color={colors.subtext} style={{marginRight: 8}} />
                 <TextInput 
                     placeholder="Search for mechanics, parts, or help..." 
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor={colors.subtext}
                     style={styles.searchInput}
                     value={search}
                     onChangeText={setSearch}
@@ -103,7 +114,7 @@ export default function BuildersScreen() {
             {HELP_CATEGORIES.map((cat) => (
                 <TouchableOpacity key={cat.id} style={styles.catCard}>
                     <View style={styles.catIconBox}>
-                        <MaterialCommunityIcons name={cat.icon as any} size={24} color="#111" />
+                        <MaterialCommunityIcons name={cat.icon as any} size={24} color={colors.text} />
                     </View>
                     <Text style={styles.catLabel}>{cat.label}</Text>
                     <Text style={styles.catMeta}>Within {cat.dist}</Text>
@@ -128,12 +139,12 @@ export default function BuildersScreen() {
                         </View>
                         <Text style={styles.helperSkill}>{helper.skill}</Text>
                         <View style={styles.distRow}>
-                            <MaterialCommunityIcons name="map-marker" size={12} color="#6B7280" />
+                            <MaterialCommunityIcons name="map-marker" size={12} color={colors.subtext} />
                             <Text style={styles.distText}>{helper.dist}</Text>
                         </View>
                     </View>
                     <TouchableOpacity style={styles.msgBtn}>
-                        <MaterialCommunityIcons name="chat-outline" size={20} color="#111" />
+                        <MaterialCommunityIcons name="chat-outline" size={20} color={colors.text} />
                     </TouchableOpacity>
                 </TouchableOpacity>
             ))}
@@ -153,8 +164,9 @@ export default function BuildersScreen() {
                         </View>
                         <Text style={styles.proSpec}>{builder.specialty}</Text>
                     </View>
-                    <TouchableOpacity style={styles.proBtn}>
-                        <Text style={styles.proBtnText}>View Portfolio</Text>
+                    <TouchableOpacity style={[styles.proBtn, !isPro && { backgroundColor: '#444' }]} onPress={() => handleProAction(() => console.log('Open Portfolio'))}>
+                        {!isPro && <MaterialCommunityIcons name="lock" size={12} color="#FFF" style={{ marginRight: 4 }} />}
+                        <Text style={styles.proBtnText}>{isPro ? "View Portfolio" : "Unlock Portfolio"}</Text>
                     </TouchableOpacity>
                 </View>
             ))}
@@ -167,7 +179,7 @@ export default function BuildersScreen() {
             {SPARE_PARTS.map((part) => (
                 <View key={part.id} style={styles.partCard}>
                      <View style={styles.partIconBox}>
-                        <MaterialCommunityIcons name="cube-outline" size={24} color="#6B7280" />
+                        <MaterialCommunityIcons name="cube-outline" size={24} color={colors.subtext} />
                      </View>
                      <View style={{flex: 1}}>
                         <Text style={styles.partName}>{part.item}</Text>
@@ -185,8 +197,8 @@ export default function BuildersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
+const getStyles = (colors: any) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     paddingHorizontal: 24,
     paddingTop: 60,
@@ -194,11 +206,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.border,
   },
-  headerTitle: { fontSize: 24, fontWeight: '800', color: '#111' },
+  headerTitle: { fontSize: 24, fontWeight: '800', color: colors.text },
   sosButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -211,16 +223,16 @@ const styles = StyleSheet.create({
   sosText: { color: '#FFF', fontWeight: '700', fontSize: 12 },
   searchSection: { padding: 24, paddingBottom: 10 },
   searchContainer: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.secondary,
     height: 50,
     borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
-  searchInput: { flex: 1, fontSize: 16, color: '#111' },
+  searchInput: { flex: 1, fontSize: 16, color: colors.text },
   sectionHeader: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
@@ -228,17 +240,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24, 
     marginTop: 20 
   },
-  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#111' },
-  seeAllText: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
-  sectionSub: { paddingHorizontal: 24, fontSize: 13, color: '#6B7280', marginTop: 4, marginBottom: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: colors.text },
+  seeAllText: { fontSize: 12, fontWeight: '600', color: colors.subtext },
+  sectionSub: { paddingHorizontal: 24, fontSize: 13, color: colors.subtext, marginTop: 4, marginBottom: 16 },
   horizontalScroll: { paddingHorizontal: 24, gap: 12 },
   catCard: {
     width: 140,
     padding: 12,
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     shadowColor: "#000",
     shadowOpacity: 0.03,
     shadowRadius: 6,
@@ -247,16 +259,16 @@ const styles = StyleSheet.create({
   catIconBox: {
     width: 40,
     height: 40,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.secondary,
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 10,
   },
-  catLabel: { fontSize: 14, fontWeight: '700', color: '#111', marginBottom: 2 },
-  catMeta: { fontSize: 11, color: '#6B7280', marginBottom: 8 },
-  catBadge: { backgroundColor: '#F3F4F6', paddingVertical: 4, paddingHorizontal: 8, borderRadius: 6, alignSelf: 'flex-start' },
-  catBadgeText: { fontSize: 10, fontWeight: '700', color: '#111' },
+  catLabel: { fontSize: 14, fontWeight: '700', color: colors.text, marginBottom: 2 },
+  catMeta: { fontSize: 11, color: colors.subtext, marginBottom: 8 },
+  catBadge: { backgroundColor: colors.secondary, paddingVertical: 4, paddingHorizontal: 8, borderRadius: 6, alignSelf: 'flex-start' },
+  catBadgeText: { fontSize: 10, fontWeight: '700', color: colors.text },
   verticalList: { paddingHorizontal: 24, gap: 12 },
   helperCard: {
     flexDirection: 'row',
@@ -264,21 +276,21 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: colors.border,
   },
   helperImage: { width: 50, height: 50, borderRadius: 25, marginRight: 12 },
   helperContent: { flex: 1 },
   rowBetween: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  helperName: { fontSize: 16, fontWeight: '700', color: '#111' },
-  helperSkill: { fontSize: 13, color: '#4B5563', marginVertical: 2 },
+  helperName: { fontSize: 16, fontWeight: '700', color: colors.text },
+  helperSkill: { fontSize: 13, color: colors.subtext, marginVertical: 2 },
   distRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  distText: { fontSize: 12, color: '#6B7280' },
+  distText: { fontSize: 12, color: colors.subtext },
   msgBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -286,30 +298,30 @@ const styles = StyleSheet.create({
     width: 220,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     overflow: 'hidden',
   },
   proImage: { width: '100%', height: 100, resizeMode: 'cover' },
   proContent: { padding: 12 },
-  proName: { fontSize: 16, fontWeight: '800', color: '#111', marginBottom: 4 },
+  proName: { fontSize: 16, fontWeight: '800', color: colors.text, marginBottom: 4 },
   proBadge: { backgroundColor: '#FEF3C7', alignSelf: 'flex-start', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginBottom: 4 },
   proBadgeText: { fontSize: 10, fontWeight: '800', color: '#D97706' },
-  proSpec: { fontSize: 12, color: '#6B7280', marginBottom: 12 },
-  proBtn: { backgroundColor: '#111', paddingVertical: 8, borderRadius: 8, alignItems: 'center' },
-  proBtnText: { color: '#FFF', fontSize: 12, fontWeight: '700' },
+  proSpec: { fontSize: 12, color: colors.subtext, marginBottom: 12 },
+  proBtn: { backgroundColor: colors.primary, paddingVertical: 8, borderRadius: 8, alignItems: 'center' },
+  proBtnText: { color: colors.background, fontSize: 12, fontWeight: '700' },
   partsList: { paddingHorizontal: 24, gap: 12 },
   partCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
     borderRadius: 12,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.secondary,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: colors.border,
   },
-  partIconBox: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', marginRight: 12, backgroundColor: '#FFF', borderRadius: 8 },
-  partName: { fontSize: 14, fontWeight: '700', color: '#111' },
-  partPrice: { fontSize: 12, color: '#6B7280' },
-  buyBtn: { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 6 },
-  buyBtnText: { fontSize: 12, fontWeight: '700', color: '#111' },
+  partIconBox: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', marginRight: 12, backgroundColor: colors.card, borderRadius: 8 },
+  partName: { fontSize: 14, fontWeight: '700', color: colors.text },
+  partPrice: { fontSize: 12, color: colors.subtext },
+  buyBtn: { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 6 },
+  buyBtnText: { fontSize: 12, fontWeight: '700', color: colors.text },
 });

@@ -91,7 +91,7 @@ export default function PromiseScreen() {
           {isSubmitting ? (
              <ActivityIndicator color="#FFF" />
           ) : (
-             <Text style={styles.buttonText}>I'm In</Text>
+             <Text style={styles.buttonText}>I&apos;m In</Text>
           )}
         </TouchableOpacity>
       </View>

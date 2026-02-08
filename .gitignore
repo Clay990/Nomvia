@@ -54,3 +54,9 @@ setup_database.js
 # Setup Scripts with Secrets
 set_database.js
 setup_storage.js
+update_users_schema.js
+setup_dating.js
+fix_memberships.js
+fix_circles.js
+fix_circles.js
+fix_memberships.js

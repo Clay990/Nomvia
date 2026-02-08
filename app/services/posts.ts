@@ -7,28 +7,29 @@ import { globalNetworkState } from '../../context/NetworkContext';
 
 const { DATABASE_ID, COLLECTIONS } = APPWRITE_CONFIG;
 
-const CACHE_KEY = 'posts_cache';
-
 export const PostsService = {
     async getPosts({ 
         lastId, 
         limit = 10, 
         feedType = 'latest', 
         searchQuery = '',
+        category = 'All',
         userInterests = []
     }: { 
         lastId?: string; 
         limit?: number; 
         feedType?: 'all' | 'trending' | 'latest'; 
         searchQuery?: string;
+        category?: string;
         userInterests?: string[];
     }) {
+        const cacheKey = `posts_cache_${category}_${feedType}`;
         
         if (!globalNetworkState.isInternetReachable) {
-            console.log('[PostsService] Offline, returning cached posts.');
-            if (!lastId && (feedType === 'latest' || feedType === 'all')) {
+            console.log(`[PostsService] Offline, returning cached posts for ${cacheKey}.`);
+            if (!lastId && !searchQuery) {
                 try {
-                    const cachedData = await AsyncStorage.getItem(CACHE_KEY);
+                    const cachedData = await AsyncStorage.getItem(cacheKey);
                     if (cachedData) {
                         return { posts: JSON.parse(cachedData), total: 0 };
                     }
@@ -44,8 +45,23 @@ export const PostsService = {
 
             if (searchQuery) {
                 queries.push(Query.search('content', searchQuery));
+                queries.push(Query.equal('privacy', 'public'));
             } 
             else {
+                if (category && category !== 'All') {
+                    if (category === 'Meetups') {
+                        queries.push(Query.equal('type', 'meetup'));
+                        queries.push(Query.equal('privacy', 'public'));
+                    } else if (category === 'Discussions') {
+                        queries.push(Query.equal('type', 'discussion'));
+                        queries.push(Query.equal('privacy', 'public'));
+                    } else {
+                        queries.push(Query.equal('tag', category.toUpperCase()));
+                    }
+                } else {
+                    queries.push(Query.equal('privacy', 'public'));
+                }
+
                 switch (feedType) {
                     case 'trending':
                         queries.push(Query.orderDesc('likesCount'));
@@ -75,8 +91,8 @@ export const PostsService = {
 
             const posts = response.documents as unknown as Post[];
 
-            if (!lastId && (feedType === 'latest' || feedType === 'all') && !searchQuery) {
-                await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(posts));
+            if (!lastId && !searchQuery) {
+                await AsyncStorage.setItem(cacheKey, JSON.stringify(posts));
             }
 
             return {
@@ -86,9 +102,9 @@ export const PostsService = {
         } catch (error) {
             console.error('Error fetching posts:', error);
             
-            if (!lastId && (feedType === 'latest' || feedType === 'all')) {
+            if (!lastId && !searchQuery) {
                 try {
-                    const cachedData = await AsyncStorage.getItem(CACHE_KEY);
+                    const cachedData = await AsyncStorage.getItem(cacheKey);
                     if (cachedData) {
                         return { posts: JSON.parse(cachedData), total: 0 };
                     }
@@ -167,8 +183,11 @@ export const PostsService = {
             const payload = {
                 userId: authUser.$id,
                 type: postData.type || 'none',
+                title: postData.title,
                 content: postData.content,
                 tag: postData.tag,
+                link: postData.link,
+                meetupTime: postData.meetupTime,
                 from: postData.from,
                 to: postData.to,
                 isLive: postData.isLive || false,
@@ -212,6 +231,42 @@ export const PostsService = {
         } catch (error) {
             console.error('Error liking post:', error);
             throw error;
+        }
+    },
+
+    async getRecentMeetups(limit = 5) {
+        try {
+            const response = await databases.listDocuments(
+                DATABASE_ID,
+                COLLECTIONS.POSTS,
+                [
+                    Query.equal('type', 'meetup'),
+                    Query.orderDesc('timestamp'),
+                    Query.limit(limit)
+                ]
+            );
+            return response.documents as unknown as Post[];
+        } catch (error) {
+            console.error('Error fetching meetups:', error);
+            return [];
+        }
+    },
+
+    async getHotDiscussions(limit = 5) {
+        try {
+            const response = await databases.listDocuments(
+                DATABASE_ID,
+                COLLECTIONS.POSTS,
+                [
+                    Query.equal('type', 'discussion'),
+                    Query.orderDesc('likesCount'), 
+                    Query.limit(limit)
+                ]
+            );
+            return response.documents as unknown as Post[];
+        } catch (error) {
+            console.error('Error fetching discussions:', error);
+            return [];
         }
     }
 };

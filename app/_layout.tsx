@@ -84,6 +84,8 @@ function AppContent() {
   );
 }
 
+import { RevenueCatProvider } from '../context/RevenueCatContext';
+
 export default Sentry.wrap(function RootLayout() {
   const [fontsLoaded] = useFonts({
     YoungSerif_400Regular,
@@ -96,15 +98,17 @@ export default Sentry.wrap(function RootLayout() {
   }
 
   return (
-    <ThemeProvider>
-      <NetworkProvider>
-        <AuthProvider>
-          <LocationProvider>
-            <AppContent />
-            <OfflineNotice />
-          </LocationProvider>
-        </AuthProvider>
-      </NetworkProvider>
-    </ThemeProvider>
+    <RevenueCatProvider>
+      <ThemeProvider>
+        <NetworkProvider>
+          <AuthProvider>
+            <LocationProvider>
+              <AppContent />
+              <OfflineNotice />
+            </LocationProvider>
+          </AuthProvider>
+        </NetworkProvider>
+      </ThemeProvider>
+    </RevenueCatProvider>
   );
 });

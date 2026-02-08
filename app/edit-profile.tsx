@@ -12,12 +12,14 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  Switch
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as ImagePicker from 'expo-image-picker';
 import { account, databases, storage, APPWRITE_DB_ID, APPWRITE_COLLECTION_USERS, APPWRITE_BUCKET_ID } from "../lib/appwrite";
 import { ID } from "react-native-appwrite";
+import { useTheme } from "../context/ThemeContext";
 
 const ROLES = ["Nomad", "Builder", "Explorer", "Weekend Warrior"];
 const PACES = ["Fast", "Steady", "Slow"];
@@ -27,6 +29,9 @@ const TIME_OPTIONS = ["<1y", "1y", "2y", "3y", "4y", "5y", "6y", "7y", "8y", "9y
 
 export default function EditProfileScreen() {
   const router = useRouter();
+  const { colors, isDark } = useTheme();
+  const styles = getStyles(colors);
+  
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [userId, setUserId] = useState("");
@@ -48,7 +53,8 @@ export default function EditProfileScreen() {
     youtube: "",
     website: "",
     skills: "",
-    timeOnRoad: ""
+    timeOnRoad: "",
+    isHelper: false
   });
 
   useEffect(() => {
@@ -79,7 +85,8 @@ export default function EditProfileScreen() {
         youtube: doc.youtube || "",
         website: doc.website || "",
         skills: doc.skills ? doc.skills.join(", ") : "",
-        timeOnRoad: doc.timeOnRoad || ""
+        timeOnRoad: doc.timeOnRoad || "",
+        isHelper: doc.isHelper || false
       });
     } catch (error) {
       console.error("Error loading profile:", error);
@@ -153,7 +160,8 @@ export default function EditProfileScreen() {
                 youtube: sanitizeUrl(formData.youtube),
                 website: sanitizeUrl(formData.website),
                 skills: skillsArray,
-                timeOnRoad: formData.timeOnRoad
+                timeOnRoad: formData.timeOnRoad,
+                isHelper: formData.isHelper
             }
         );
         
@@ -167,17 +175,17 @@ export default function EditProfileScreen() {
     }
   };
 
-  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#111" /></View>;
+  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>;
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#111" />
+            <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Profile</Text>
         <TouchableOpacity onPress={handleSave} disabled={saving}>
-            {saving ? <ActivityIndicator color="#111" /> : <Text style={styles.saveText}>Save</Text>}
+            {saving ? <ActivityIndicator color={colors.primary} /> : <Text style={styles.saveText}>Save</Text>}
         </TouchableOpacity>
       </View>
 
@@ -190,7 +198,7 @@ export default function EditProfileScreen() {
                     <Image source={{ uri: formData.coverImage }} style={styles.coverImg} />
                 ) : (
                     <View style={styles.placeholder}>
-                        <MaterialCommunityIcons name="image-area" size={32} color="#9CA3AF" />
+                        <MaterialCommunityIcons name="image-area" size={32} color={colors.subtext} />
                         <Text style={styles.phText}>Cover Image</Text>
                     </View>
                 )}
@@ -202,7 +210,7 @@ export default function EditProfileScreen() {
                         <Image source={{ uri: formData.avatar }} style={styles.avatarImg} />
                     ) : (
                         <View style={styles.placeholder}>
-                            <MaterialCommunityIcons name="camera" size={24} color="#9CA3AF" />
+                            <MaterialCommunityIcons name="camera" size={24} color={colors.subtext} />
                         </View>
                     )}
                 </TouchableOpacity>
@@ -212,12 +220,22 @@ export default function EditProfileScreen() {
             <Text style={styles.sectionTitle}>Basics</Text>
             <View style={styles.inputGroup}>
                 <Text style={styles.label}>Display Name</Text>
-                <TextInput style={styles.input} value={formData.username} onChangeText={t => setFormData({...formData, username: t})} />
+                <TextInput 
+                    style={styles.input} 
+                    value={formData.username} 
+                    onChangeText={t => setFormData({...formData, username: t})}
+                    placeholderTextColor={colors.subtext}
+                />
             </View>
             
             <View style={styles.inputGroup}>
                 <Text style={styles.label}>Location</Text>
-                <TextInput style={styles.input} value={formData.location} onChangeText={t => setFormData({...formData, location: t})} />
+                <TextInput 
+                    style={styles.input} 
+                    value={formData.location} 
+                    onChangeText={t => setFormData({...formData, location: t})}
+                    placeholderTextColor={colors.subtext}
+                />
             </View>
 
             <View style={styles.selectorGroup}>
@@ -233,7 +251,14 @@ export default function EditProfileScreen() {
 
             <View style={styles.inputGroup}>
                 <Text style={styles.label}>Bio</Text>
-                <TextInput style={[styles.input, styles.textArea]} multiline numberOfLines={3} value={formData.bio} onChangeText={t => setFormData({...formData, bio: t})} />
+                <TextInput 
+                    style={[styles.input, styles.textArea]} 
+                    multiline 
+                    numberOfLines={3} 
+                    value={formData.bio} 
+                    onChangeText={t => setFormData({...formData, bio: t})}
+                    placeholderTextColor={colors.subtext}
+                />
             </View>
             <View style={styles.inputGroup}>
                 <Text style={styles.label}>Skills</Text>
@@ -242,6 +267,19 @@ export default function EditProfileScreen() {
                     placeholder="e.g. Solar, Mechanic, Cooking (comma separated)" 
                     value={formData.skills} 
                     onChangeText={t => setFormData({...formData, skills: t})} 
+                    placeholderTextColor={colors.subtext}
+                />
+            </View>
+
+            <View style={styles.switchRow}>
+                <View>
+                    <Text style={styles.label}>Available to Help?</Text>
+                    <Text style={styles.subLabel}>Show on map for others</Text>
+                </View>
+                <Switch 
+                    value={formData.isHelper} 
+                    onValueChange={v => setFormData({...formData, isHelper: v})}
+                    trackColor={{ false: colors.border, true: colors.primary }}
                 />
             </View>
 
@@ -249,7 +287,7 @@ export default function EditProfileScreen() {
             
             <View style={styles.selectorGroup}>
                 <View style={styles.selectorHeader}>
-                    <MaterialCommunityIcons name="badge-account-outline" size={18} color="#4B5563" />
+                    <MaterialCommunityIcons name="badge-account-outline" size={18} color={colors.subtext} />
                     <Text style={styles.selectorLabel}>Role</Text>
                 </View>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pillScroll}>
@@ -263,7 +301,7 @@ export default function EditProfileScreen() {
 
             <View style={styles.selectorGroup}>
                 <View style={styles.selectorHeader}>
-                    <MaterialCommunityIcons name="speedometer" size={18} color="#4B5563" />
+                    <MaterialCommunityIcons name="speedometer" size={18} color={colors.subtext} />
                     <Text style={styles.selectorLabel}>Pace</Text>
                 </View>
                 <View style={styles.pillRow}>
@@ -277,7 +315,7 @@ export default function EditProfileScreen() {
 
             <View style={styles.selectorGroup}>
                 <View style={styles.selectorHeader}>
-                    <MaterialCommunityIcons name="account-group-outline" size={18} color="#4B5563" />
+                    <MaterialCommunityIcons name="account-group-outline" size={18} color={colors.subtext} />
                     <Text style={styles.selectorLabel}>Mode</Text>
                 </View>
                 <View style={styles.pillRow}>
@@ -291,7 +329,7 @@ export default function EditProfileScreen() {
 
             <View style={styles.selectorGroup}>
                 <View style={styles.selectorHeader}>
-                    <MaterialCommunityIcons name="tent" size={18} color="#4B5563" />
+                    <MaterialCommunityIcons name="tent" size={18} color={colors.subtext} />
                     <Text style={styles.selectorLabel}>Style</Text>
                 </View>
                 <View style={styles.pillRow}>
@@ -309,29 +347,51 @@ export default function EditProfileScreen() {
                     <Image source={{ uri: formData.rigImage }} style={styles.rigImg} />
                 ) : (
                     <View style={styles.placeholderRow}>
-                        <MaterialCommunityIcons name="van-utility" size={24} color="#9CA3AF" />
+                        <MaterialCommunityIcons name="van-utility" size={24} color={colors.subtext} />
                         <Text style={styles.phText}>Add Rig Photo</Text>
                     </View>
                 )}
             </TouchableOpacity>
             <View style={styles.inputGroup}>
                 <Text style={styles.label}>Rig Name</Text>
-                <TextInput style={styles.input} value={formData.rigName} onChangeText={t => setFormData({...formData, rigName: t})} />
+                <TextInput 
+                    style={styles.input} 
+                    value={formData.rigName} 
+                    onChangeText={t => setFormData({...formData, rigName: t})}
+                    placeholderTextColor={colors.subtext}
+                />
             </View>
             <View style={styles.inputGroup}>
                 <Text style={styles.label}>Model / Type</Text>
-                <TextInput style={styles.input} value={formData.rigSummary} onChangeText={t => setFormData({...formData, rigSummary: t})} />
+                <TextInput 
+                    style={styles.input} 
+                    value={formData.rigSummary} 
+                    onChangeText={t => setFormData({...formData, rigSummary: t})}
+                    placeholderTextColor={colors.subtext}
+                />
             </View>
 
             {/* Socials */}
             <Text style={styles.sectionTitle}>Social Links</Text>
             <View style={styles.inputGroup}>
                 <Text style={styles.label}>Instagram</Text>
-                <TextInput style={styles.input} placeholder="@username" value={formData.instagram} onChangeText={t => setFormData({...formData, instagram: t})} />
+                <TextInput 
+                    style={styles.input} 
+                    placeholder="@username" 
+                    value={formData.instagram} 
+                    onChangeText={t => setFormData({...formData, instagram: t})}
+                    placeholderTextColor={colors.subtext}
+                />
             </View>
             <View style={styles.inputGroup}>
                 <Text style={styles.label}>YouTube</Text>
-                <TextInput style={styles.input} placeholder="Channel URL" value={formData.youtube} onChangeText={t => setFormData({...formData, youtube: t})} />
+                <TextInput 
+                    style={styles.input} 
+                    placeholder="Channel URL" 
+                    value={formData.youtube} 
+                    onChangeText={t => setFormData({...formData, youtube: t})}
+                    placeholderTextColor={colors.subtext}
+                />
             </View>
 
         </ScrollView>
@@ -340,43 +400,49 @@ export default function EditProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFF' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+const getStyles = (colors: any) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: colors.border },
   backBtn: { padding: 8 },
-  headerTitle: { fontSize: 18, fontWeight: '700' },
-  saveText: { fontSize: 16, fontWeight: '700', color: '#3B82F6' },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
+  saveText: { fontSize: 16, fontWeight: '700', color: colors.primary },
   
   scrollContent: { padding: 20, paddingBottom: 50 },
-  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#111', marginTop: 24, marginBottom: 12 },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: colors.text, marginTop: 24, marginBottom: 12 },
   
   inputGroup: { marginBottom: 16 },
-  label: { fontSize: 13, fontWeight: '600', color: '#6B7280', marginBottom: 6 },
-  input: { backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, padding: 12, fontSize: 15, color: '#111' },
+  label: { fontSize: 13, fontWeight: '600', color: colors.subtext, marginBottom: 6 },
+  subLabel: { fontSize: 11, color: colors.subtext },
+  input: { backgroundColor: colors.secondary, borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 12, fontSize: 15, color: colors.text },
   textArea: { height: 80, textAlignVertical: 'top' },
   rowInputs: { flexDirection: 'row', gap: 12 },
 
-  coverPicker: { height: 140, backgroundColor: '#F3F4F6', borderRadius: 12, overflow: 'hidden', justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
+  coverPicker: { height: 140, backgroundColor: colors.secondary, borderRadius: 12, overflow: 'hidden', justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
   coverImg: { width: '100%', height: '100%', resizeMode: 'cover' },
-  avatarPicker: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#F3F4F6', borderWidth: 4, borderColor: '#FFF', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
+  avatarPicker: { width: 100, height: 100, borderRadius: 50, backgroundColor: colors.secondary, borderWidth: 4, borderColor: colors.card, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
   avatarImg: { width: '100%', height: '100%' },
-  miniLabel: { fontSize: 12, color: '#3B82F6', fontWeight: '600', marginTop: 4 },
+  miniLabel: { fontSize: 12, color: colors.primary, fontWeight: '600', marginTop: 4 },
   
-  rigPicker: { height: 180, backgroundColor: '#F3F4F6', borderRadius: 12, overflow: 'hidden', justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  rigPicker: { height: 180, backgroundColor: colors.secondary, borderRadius: 12, overflow: 'hidden', justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
   rigImg: { width: '100%', height: '100%', resizeMode: 'cover' },
   
   placeholder: { alignItems: 'center', gap: 4 },
   placeholderRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  phText: { color: '#9CA3AF', fontWeight: '500' },
+  phText: { color: colors.subtext, fontWeight: '500' },
 
   selectorGroup: { marginBottom: 20 },
   selectorHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-  selectorLabel: { fontSize: 14, fontWeight: '700', color: '#374151' },
+  selectorLabel: { fontSize: 14, fontWeight: '700', color: colors.text },
   pillScroll: { flexDirection: 'row' },
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  pill: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#FFF', marginRight: 8 },
-  pillActive: { backgroundColor: '#111', borderColor: '#111' },
-  pillText: { fontSize: 13, fontWeight: '600', color: '#4B5563' },
-  pillTextActive: { color: '#FFF' },
+  pill: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card, marginRight: 8 },
+  pillActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  pillText: { fontSize: 13, fontWeight: '600', color: colors.subtext },
+  pillTextActive: { color: colors.background },
+  
+  switchRow: {
+      flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20,
+      backgroundColor: colors.card, padding: 16, borderRadius: 12, borderWidth: 1, borderColor: colors.border
+  }
 });

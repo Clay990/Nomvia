@@ -5,16 +5,16 @@ const THEME_STORAGE_KEY = 'user_theme_preference';
 
 export const Colors = {
   light: {
-    background: '#FAFAF5', // Bone / Off-White
-    text: '#1A2E05',       // Deep Army Green
-    card: '#FFFFFF',       // Pure White
-    border: '#E2E2DC',     // Warm Grey
-    icon: '#5F6F52',       // Sage Green
-    tint: '#1A2E05',       // Deep Army Green
-    subtext: '#5F6F52',    // Sage Green
-    primary: '#D97706',    // Burnt Orange (Accent)
-    secondary: '#E8EAE6',  // Light Sage
-    danger: '#EF4444',     // Standard Red
+    background: '#FFFFFF', 
+    text: '#000000',       
+    card: '#FFFFFF',      
+    border: '#E5E5E5',    
+    icon: '#000000',     
+    tint: '#000000',       
+    subtext: '#666666',   
+    primary: '#000000',   
+    secondary: '#F4F4F4', 
+    danger: '#EF4444',   
   },
   dark: {
     background: '#000000',
@@ -47,7 +47,7 @@ const ThemeContext = createContext<ThemeContextType>({
 });
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [theme, setTheme] = useState<ThemeType>('light'); // Default to light initially
+  const [theme, setTheme] = useState<ThemeType>('light');
 
   useEffect(() => {
     loadTheme();

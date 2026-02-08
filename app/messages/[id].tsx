@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -9,53 +9,114 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  ActivityIndicator
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
-
-const getMockMessages = (id: string) => [
-  { id: '1', text: "Hey! Are you still at the campsite?", sender: 'them', time: '10:30 AM' },
-  { id: '2', text: "Yeah, just making coffee. You?", sender: 'me', time: '10:32 AM' },
-  { id: '3', text: "Packing up now. Thinking of hitting the trails in an hour.", sender: 'them', time: '10:33 AM' },
-  { id: '4', text: "Sounds plan! I'll be ready.", sender: 'me', time: '10:35 AM' },
-];
+import { useAuth } from "../../context/AuthContext";
+import { ChatService } from "../../app/services/chat";
+import { DatingService, DatingProfile } from "../../app/services/dating";
+import { Message } from "../../app/types";
+import { format } from "date-fns";
 
 export default function ChatScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams();
+  const { id } = useLocalSearchParams(); 
+  const partnerId = id as string;
   const { colors, isDark } = useTheme();
+  const { user } = useAuth();
   const styles = getStyles(colors, isDark);
   
-  const [messages, setMessages] = useState(getMockMessages(id as string));
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
+  const [partner, setPartner] = useState<DatingProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const flatListRef = useRef<FlatList>(null);
 
-  const sendMessage = () => {
-    if (!inputText.trim()) return;
-    const newMessage = {
-      id: Date.now().toString(),
-      text: inputText,
-      sender: 'me',
-      time: 'Now'
-    };
-    setMessages([...messages, newMessage]);
-    setInputText("");
+  useEffect(() => {
+    if (user && partnerId) {
+        loadData();
+    }
+  }, [user, partnerId]);
+
+  useEffect(() => {
+      if (user && partnerId) {
+          const unsub = ChatService.subscribeToDirectMessages(user.$id, partnerId, (newMsg) => {
+              setMessages(prev => {
+                  if (prev.find(m => m.$id === newMsg.$id)) return prev;
+                  return [...prev, newMsg];
+              });
+              setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+          });
+          return () => {
+              if (unsub) unsub();
+          };
+      }
+  }, [user, partnerId]);
+
+  const loadData = async () => {
+      try {
+          const [profile, msgs] = await Promise.all([
+              DatingService.getUserProfile(partnerId),
+              ChatService.getDirectMessages(user!.$id, partnerId)
+          ]);
+          setPartner(profile);
+          setMessages(msgs);
+          setLoading(false);
+          setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 200);
+      } catch (error) {
+          console.error("Failed to load chat data", error);
+          setLoading(false);
+      }
   };
 
-  const renderItem = ({ item }: { item: any }) => (
-    <View style={[
-      styles.messageBubble,
-      item.sender === 'me' ? styles.myBubble : styles.theirBubble
-    ]}>
-      <Text style={[
-        styles.messageText,
-        item.sender === 'me' ? styles.myText : styles.theirText
-      ]}>{item.text}</Text>
-      <Text style={[
-        styles.timeText,
-        item.sender === 'me' ? styles.myTime : styles.theirTime
-      ]}>{item.time}</Text>
-    </View>
-  );
+  const sendMessage = async () => {
+    if (!inputText.trim() || !user) return;
+    
+    const content = inputText.trim();
+    setInputText(""); 
+
+    try {
+        await ChatService.sendMessage({
+            receiverId: partnerId,
+            content: content
+        });
+        // The subscription will add the message to the list usually, 
+        // but we can optimistic update if we want. 
+        // For now rely on subscription/fetch or simple reload if needed.
+        // Actually subscription catches our own messages too if backend reflects them.
+    } catch (error) {
+        console.error("Failed to send", error);
+        setInputText(content);
+    }
+  };
+
+  const renderItem = ({ item }: { item: Message }) => {
+    const isMe = item.userId === user?.$id;
+    return (
+        <View style={[
+        styles.messageBubble,
+        isMe ? styles.myBubble : styles.theirBubble
+        ]}>
+        <Text style={[
+            styles.messageText,
+            isMe ? styles.myText : styles.theirText
+        ]}>{item.content}</Text>
+        <Text style={[
+            styles.timeText,
+            isMe ? styles.myTime : styles.theirTime
+        ]}>{format(new Date(item.createdAt), 'p')}</Text>
+        </View>
+    );
+  };
+
+  if (loading) {
+      return (
+          <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+              <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+      );
+  }
 
   return (
     <View style={styles.container}>
@@ -64,8 +125,8 @@ export default function ChatScreen() {
           <Feather name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.headerTitleContainer}>
-            <Text style={styles.headerName}>David</Text>
-            <Text style={styles.headerStatus}>Online</Text>
+            <Text style={styles.headerName}>{partner?.name || "Nomad"}</Text>
+            <Text style={styles.headerStatus}>{partner?.location || "Online"}</Text>
         </View>
         <TouchableOpacity>
           <Feather name="more-vertical" size={24} color={colors.text} />
@@ -73,11 +134,12 @@ export default function ChatScreen() {
       </View>
 
       <FlatList
+        ref={flatListRef}
         data={messages}
-        keyExtractor={item => item.id}
+        keyExtractor={item => item.$id}
         renderItem={renderItem}
         contentContainerStyle={styles.listContent}
-        inverted={false} 
+        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
       />
 
       <KeyboardAvoidingView 

@@ -7,8 +7,8 @@ import { useTheme } from "../../context/ThemeContext";
 export default function TabLayout() {
   const { colors, isDark } = useTheme();
 
-  const ACTIVE_COLOR = isDark ? "#FFFFFF" : "#1A2E05";
-  const INACTIVE_COLOR = isDark ? "#6B7280" : "#A9B388"; 
+  const ACTIVE_COLOR = isDark ? "#FFFFFF" : "#000000";
+  const INACTIVE_COLOR = isDark ? "#6B7280" : "#999999"; 
 
   return (
     <Tabs
