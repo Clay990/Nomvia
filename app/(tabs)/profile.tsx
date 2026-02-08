@@ -251,7 +251,12 @@ export default function ProfileScreen() {
 
                      <StatsGrid snapshots={DATA.snapshot} />
                      <BioSection bio={DATA.bio} interests={DATA.interests} />
-                     <ServiceCard initialIsHelper={DATA.isHelper} builder={DATA.builder} skills={DATA.skills} />
+                     <ServiceCard 
+                        initialIsHelper={DATA.isHelper} 
+                        builder={DATA.builder} 
+                        skills={DATA.skills} 
+                        onPress={() => router.push('/edit-profile')}
+                     />
                 </View>
             )}
 

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Nomvia",
     "slug": "Nomvia",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "orientation": "portrait",
     "icon": "./assets/logo.png",
     "scheme": "appwrite-callback-6973457f000e977ae601",
@@ -14,13 +14,18 @@
     },
     "android": {
       "package": "com.nomvia.app",
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "backgroundColor": "#000000",
         "foregroundImage": "./assets/logo.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "config": {
+        "googleMaps": {
+          "apiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+        }
+      }
     },
     "web": {
       "output": "static",

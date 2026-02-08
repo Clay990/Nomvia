@@ -274,6 +274,8 @@ export default function MapScreen() {
         source={{ html: htmlContent }}
         style={styles.map}
         scrollEnabled={false}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
         onLoadEnd={() => {
             setMapReady(true);
         }}

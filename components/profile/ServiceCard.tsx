@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Switch } from 'react-native';
+import { View, Text, StyleSheet, Switch, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { account, databases, APPWRITE_DB_ID, APPWRITE_COLLECTION_USERS } from '../../lib/appwrite'; 
 import { useTheme } from '../../context/ThemeContext';
@@ -8,9 +8,10 @@ interface ServiceCardProps {
   initialIsHelper: boolean;
   builder: any;
   skills: string[];
+  onPress: () => void;
 }
 
-const ServiceCard: React.FC<ServiceCardProps> = ({ initialIsHelper, builder, skills }) => {
+const ServiceCard: React.FC<ServiceCardProps> = ({ initialIsHelper, builder, skills, onPress }) => {
   const { colors, isDark } = useTheme();
   const styles = getStyles(colors, isDark);
 
@@ -52,18 +53,21 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ initialIsHelper, builder, ski
             />
         </View>
         <View style={styles.divider} />
-        <View style={styles.serviceDetails}>
-                <Text style={styles.specLabel}>SPECIALTY</Text>
-                <Text style={styles.specText}>{builder?.specialty || "General"}</Text>
-                <View style={styles.skillsRow}>
-                {skills && skills.map((skill: string) => (
-                    <Text key={skill} style={styles.skillSimple}>• {skill}</Text>
-                ))}
-                {(!skills || skills.length === 0) && (
-                    <Text style={styles.skillSimple}>No skills listed yet.</Text>
-                )}
+        <TouchableOpacity style={styles.serviceDetails} onPress={onPress}>
+                <View style={{flex: 1}}>
+                    <Text style={styles.specLabel}>SPECIALTY</Text>
+                    <Text style={styles.specText}>{builder?.specialty || (skills && skills.length > 0 ? skills[0] : "General Helper")}</Text>
+                    <View style={styles.skillsRow}>
+                        {skills && skills.map((skill: string) => (
+                            <Text key={skill} style={styles.skillSimple}>• {skill}</Text>
+                        ))}
+                        {(!skills || skills.length === 0) && (
+                            <Text style={styles.skillSimple}>No skills listed yet. Tap to add.</Text>
+                        )}
+                    </View>
                 </View>
-        </View>
+                <MaterialCommunityIcons name="chevron-right" size={24} color={colors.subtext} />
+        </TouchableOpacity>
     </View>
   );
 };
@@ -86,7 +90,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   serviceTitle: { color: colors.text, fontSize: 16, fontWeight: '700' },
   serviceSub: { color: colors.subtext, fontSize: 12 },
   divider: { height: 1, backgroundColor: colors.border, marginBottom: 16 },
-  serviceDetails: {},
+  serviceDetails: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   specLabel: { fontSize: 10, color: colors.subtext, fontWeight: '700', marginBottom: 4, letterSpacing: 1 },
   specText: { color: colors.text, fontSize: 14, fontWeight: '600', marginBottom: 12 },
   skillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
