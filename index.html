@@ -34,7 +34,7 @@
         <ul class="nav-links">
             <li><a href="#features">Features</a></li>
             <li><a href="#stats">Problem</a></li>
-            <li><a href="#contact">Download</a></li>
+            <li><a href="#download">Download</a></li>
             <li><a href="https://github.com/Clay990/Nomvia" target="_blank">GitHub</a></li>
         </ul>
     </nav>
@@ -50,11 +50,60 @@
         <div style="position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1) 20%, rgba(255,255,255,0.1) 80%, transparent); transform: translateY(-50%); pointer-events: none;"></div>
         
         <div class="hero-content">
+            <div class="hero-meta">
+                <span class="pill pill-accent">Beta live · Shipyard 2026</span>
+                <span class="pill">Trust-first · Verified</span>
+            </div>
             <h1>Meet People<br>Who Move</h1>
             <p>A trust-based social network for van-lifers, digital nomads, and travelers. Find companions, share routes, and stay connected on the road.</p>
             <div style="display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap; margin-top: 3rem;">
                 <a href="https://github.com/Clay990/Nomvia/releases" class="cta-button">Download Beta</a>
                 <a href="https://groups.google.com/g/nomvia-beta" class="cta-button-outline">Become a Tester</a>
+            </div>
+            <div class="hero-highlights">
+                <div class="hero-highlight">
+                    <span>1</span>
+                    Trust-verified profiles with rig photo proof and safety promise.
+                </div>
+                <div class="hero-highlight">
+                    <span>2</span>
+                    Travel-intent feed to find convoy partners who match your route.
+                </div>
+                <div class="hero-highlight">
+                    <span>3</span>
+                    Helpers directory tuned for vans: mechanics, solar techs, carpenters.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Nomvia Works -->
+    <section class="section-band">
+        <h2 class="section-title reveal" style="margin-bottom: 2rem;">Why Nomvia Works</h2>
+        <div class="band-grid">
+            <div class="band-card reveal">
+                <h3>Built For Movers</h3>
+                <ul class="band-list">
+                    <li><span class="band-dot"></span>Travel-intent posts instead of static profiles.</li>
+                    <li><span class="band-dot"></span>Filters for pace, rig type, off-grid vs campground preference.</li>
+                    <li><span class="band-dot"></span>Map-first view so you meet people actually nearby.</li>
+                </ul>
+            </div>
+            <div class="band-card reveal">
+                <h3>Trust & Safety</h3>
+                <ul class="band-list">
+                    <li><span class="band-dot"></span>5-step verification with rig photos and ID checks.</li>
+                    <li><span class="band-dot"></span>Community Promise keeps creeps and bots out.</li>
+                    <li><span class="band-dot"></span>Verified badges for helpers and long-haul nomads.</li>
+                </ul>
+            </div>
+            <div class="band-card reveal">
+                <h3>Made For Shipyard</h3>
+                <ul class="band-list">
+                    <li><span class="band-dot"></span>Production-ready Expo app: chat, stories, circles, services.</li>
+                    <li><span class="band-dot"></span>RevenueCat subscriptions and Appwrite backend.</li>
+                    <li><span class="band-dot"></span>Fast beta updates shipped weekly.</li>
+                </ul>
             </div>
         </div>
     </section>
@@ -174,25 +223,43 @@
     </section>
     
     <!-- App Preview Section -->
-    <section class="features" style="background: linear-gradient(180deg, #0a0a0a 0%, #000000 100%);">
+    <section class="features app-preview-section" style="background: linear-gradient(180deg, #0a0a0a 0%, #000000 100%);">
         <h2 class="section-title reveal">See It In Action</h2>
-        <p class="section-subtitle reveal">Actual UI from the current Alpha build</p>
-        
-        <div style="max-width: 400px; margin: 3rem auto; position: relative;">
-            <div class="reveal" style="border-radius: 30px; overflow: hidden; box-shadow: 0 40px 100px rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.1);">
-                <img src="https://github.com/Clay990/Nomvia/blob/main/assets/images/WhatsApp%20Image%202026-01-22%20at%2011.07.21%20AM.jpeg?raw=true" 
-                     alt="Nomvia App Interface" 
-                     style="width: 100%; height: auto; display: block;">
+        <p class="section-subtitle reveal">Actual screens from the current build</p>
+
+        <div class="screenshot-gallery reveal">
+            <div class="screenshot-card">
+                <img src="screenshot/home.jpeg" alt="Home Feed" loading="lazy">
+                <span class="screenshot-label">Home Feed</span>
+            </div>
+            <div class="screenshot-card">
+                <img src="screenshot/dating.jpeg" alt="Connect / Dating" loading="lazy">
+                <span class="screenshot-label">Connect</span>
+            </div>
+            <div class="screenshot-card">
+                <img src="screenshot/campfire.jpeg" alt="Campfire Community" loading="lazy">
+                <span class="screenshot-label">Campfire</span>
+            </div>
+            <div class="screenshot-card">
+                <img src="screenshot/map.jpeg" alt="Map View" loading="lazy">
+                <span class="screenshot-label">Map</span>
+            </div>
+            <div class="screenshot-card">
+                <img src="screenshot/service.jpeg" alt="Services Directory" loading="lazy">
+                <span class="screenshot-label">Services</span>
+            </div>
+            <div class="screenshot-card">
+                <img src="screenshot/profile.jpeg" alt="User Profile" loading="lazy">
+                <span class="screenshot-label">Profile</span>
             </div>
         </div>
-        
+
         <div style="text-align: center; margin-top: 2rem;">
             <p style="color: #888; font-size: 1rem; max-width: 600px; margin: 0 auto;">
-                Features trust-first onboarding, convoy feeds, swipe-based connections, community circles, and a verified services directory
+                Convoy feeds, swipe-based connections, community circles, map discovery, services directory, and rich profiles
             </p>
         </div>
     </section>
-
     <!-- CTA Section -->
     <section id="contact" class="hero" style="min-height: 60vh;">
         <div class="hero-content reveal">
