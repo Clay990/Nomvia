@@ -44,8 +44,9 @@ export function RevenueCatProvider({ children }: { children: React.ReactNode }) 
       checkEntitlements(info);
       try {
         const offerings = await Purchases.getOfferings();
-        if (offerings.current && offerings.current.availablePackages.length > 0) {
-          setCurrentOffering(offerings.current.availablePackages);
+        const offering = offerings.all['nomvia'] || offerings.current;
+        if (offering && offering.availablePackages.length > 0) {
+          setCurrentOffering(offering.availablePackages);
         }
       } catch (e) {
         console.error("Error fetching offerings", e);
@@ -89,8 +90,12 @@ export function RevenueCatProvider({ children }: { children: React.ReactNode }) 
         return false;
     }
     try {
+      const offerings = await Purchases.getOfferings();
+      const offering = offerings.all['nomvia'] || offerings.current;
+
       const paywallResult = await RevenueCatUI.presentPaywall({
         displayCloseButton: true,
+        offering: offering || undefined
       });
 
       if (paywallResult === PAYWALL_RESULT.PURCHASED || paywallResult === PAYWALL_RESULT.RESTORED) {

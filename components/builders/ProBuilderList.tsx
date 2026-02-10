@@ -15,9 +15,10 @@ interface ProBuilderListProps {
   colors: any;
   isPro: boolean;
   onAction: () => void;
+  onProfile: (id: string) => void;
 }
 
-const ProBuilderList: React.FC<ProBuilderListProps> = ({ builders, colors, isPro, onAction }) => {
+const ProBuilderList: React.FC<ProBuilderListProps> = ({ builders, colors, isPro, onAction, onProfile }) => {
   if (builders.length === 0) return null;
 
   const styles = getStyles(colors);
@@ -30,7 +31,7 @@ const ProBuilderList: React.FC<ProBuilderListProps> = ({ builders, colors, isPro
       <Text style={styles.sectionSub}>Learn from the best. Verified conversion experts.</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
         {builders.map((builder) => (
-          <View key={builder.id} style={styles.proCard}>
+          <TouchableOpacity key={builder.id} style={styles.proCard} onPress={() => onProfile(builder.id.toString())}>
             <Image source={{ uri: builder.image }} style={styles.proImage} />
             <View style={styles.proContent}>
               <Text style={styles.proName}>{builder.name}</Text>
@@ -46,7 +47,7 @@ const ProBuilderList: React.FC<ProBuilderListProps> = ({ builders, colors, isPro
               {!isPro && <MaterialCommunityIcons name="lock" size={12} color="#FFF" style={{ marginRight: 4 }} />}
               <Text style={styles.proBtnText}>{isPro ? "View Portfolio" : "Unlock Portfolio"}</Text>
             </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         ))}
       </ScrollView>
     </>

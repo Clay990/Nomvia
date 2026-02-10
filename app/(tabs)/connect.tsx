@@ -7,6 +7,7 @@ import {
   Dimensions,
   Image,
   Modal,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -26,6 +27,8 @@ export default function ConnectScreen() {
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showMatch, setShowMatch] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
@@ -51,6 +54,7 @@ export default function ConnectScreen() {
 
   const handleSwipe = async (direction: 'left' | 'right') => {
     if (!currentProfile || !currentUserId) return;
+    setShowDetail(false);
 
     try {
         const type = direction === 'right' ? 'like' : 'pass';
@@ -100,18 +104,23 @@ export default function ConnectScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerBtn} onPress={() => router.push('/matches')}>
-            <MaterialCommunityIcons name="message-text-outline" size={24} color={colors.text} />
+        <TouchableOpacity style={styles.headerBtn} onPress={() => setShowFilter(true)}>
+            <MaterialCommunityIcons name="tune-variant" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Connect</Text>
-        <TouchableOpacity style={styles.headerBtn} onPress={loadMatches}>
-           <MaterialCommunityIcons name="refresh" size={24} color={colors.text} />
+        <TouchableOpacity style={styles.headerBtn} onPress={() => router.push('/matches')}>
+           <MaterialCommunityIcons name="message-text-outline" size={24} color={colors.text} />
         </TouchableOpacity>
       </View>
+
       <View style={styles.contentArea}>
         <View style={styles.cardContainer}>
           {currentProfile ? (
-            <View style={styles.card}>
+            <TouchableOpacity 
+                activeOpacity={1} 
+                style={styles.card} 
+                onPress={() => setShowDetail(true)}
+            >
               <Image source={{ uri: currentProfile.image }} style={styles.mainImage} />
               
               <View style={styles.vanBubble}>
@@ -140,6 +149,7 @@ export default function ConnectScreen() {
                      {currentProfile.verified && (
                         <MaterialCommunityIcons name="check-decagram" size={24} color="#3B82F6" />
                      )}
+                     <MaterialCommunityIcons name="information-outline" size={20} color="rgba(255,255,255,0.7)" style={{ marginLeft: 'auto' }} />
                    </View>
                    
                    <View style={styles.statusRow}>
@@ -171,7 +181,7 @@ export default function ConnectScreen() {
                    </View>
                  </View>
               </LinearGradient>
-            </View>
+            </TouchableOpacity>
           ) : (
              <View style={styles.emptyCard}>
                 <MaterialCommunityIcons name="map-search-outline" size={64} color={colors.subtext} />
@@ -202,6 +212,7 @@ export default function ConnectScreen() {
             </View>
         )}
       </View>
+
       <Modal visible={showMatch} transparent animationType="fade">
         <View style={styles.matchOverlay}>
             <View style={styles.matchBox}>
@@ -218,6 +229,85 @@ export default function ConnectScreen() {
                 </TouchableOpacity>
             </View>
         </View>
+      </Modal>
+
+      <Modal visible={showDetail} animationType="slide" presentationStyle="pageSheet">
+          {currentProfile && (
+              <View style={styles.detailContainer}>
+                  <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+                      <Image source={{ uri: currentProfile.image }} style={styles.detailImage} />
+                      <TouchableOpacity style={styles.closeDetailBtn} onPress={() => setShowDetail(false)}>
+                          <MaterialCommunityIcons name="chevron-down" size={30} color="#FFF" />
+                      </TouchableOpacity>
+                      
+                      <View style={styles.detailContent}>
+                          <View style={styles.detailHeader}>
+                              <Text style={styles.detailName}>{currentProfile.name}, {currentProfile.age}</Text>
+                              {currentProfile.verified && <MaterialCommunityIcons name="check-decagram" size={24} color="#3B82F6" />}
+                          </View>
+                          <Text style={styles.detailRole}>{currentProfile.status || 'Explorer'}</Text>
+                          
+                          <View style={styles.divider} />
+                          
+                          <Text style={styles.sectionTitle}>ABOUT ME</Text>
+                          <Text style={styles.bioText}>{currentProfile.bio}</Text>
+                          
+                          <Text style={styles.sectionTitle}>INTERESTS</Text>
+                          <View style={styles.tagRow}>
+                              {currentProfile.tags && currentProfile.tags.map((tag, i) => (
+                                  <View key={i} style={[styles.tag, { borderColor: colors.border, backgroundColor: colors.secondary }]}>
+                                      <Text style={[styles.tagText, { color: colors.text }]}>{tag}</Text>
+                                  </View>
+                              ))}
+                          </View>
+
+                          <Text style={styles.sectionTitle}>MY RIG</Text>
+                          <View style={styles.rigCard}>
+                              <Image source={{ uri: currentProfile.vanImage }} style={styles.rigImage} />
+                              <View style={styles.rigInfo}>
+                                  <Text style={styles.rigTitle}>The Vessel</Text>
+                                  <Text style={styles.rigSub}>Self-Converted Van</Text>
+                              </View>
+                          </View>
+                      </View>
+                  </ScrollView>
+                  <View style={styles.detailActions}>
+                      <TouchableOpacity style={[styles.btn, styles.passBtn]} onPress={() => handleSwipe('left')}>
+                          <MaterialCommunityIcons name="close" size={30} color="#EF4444" />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={[styles.btn, styles.likeBtn]} onPress={() => handleSwipe('right')}>
+                          <MaterialCommunityIcons name="heart" size={30} color="#10B981" />
+                      </TouchableOpacity>
+                  </View>
+              </View>
+          )}
+      </Modal>
+
+      <Modal visible={showFilter} transparent animationType="slide">
+          <View style={styles.filterOverlay}>
+              <View style={styles.filterBox}>
+                  <View style={styles.filterHeader}>
+                      <Text style={styles.filterTitle}>Filter Nomads</Text>
+                      <TouchableOpacity onPress={() => setShowFilter(false)}>
+                          <MaterialCommunityIcons name="close" size={24} color={colors.text} />
+                      </TouchableOpacity>
+                  </View>
+                  
+                  <Text style={styles.filterLabel}>Distance: 50 km</Text>
+                  <View style={styles.sliderMock}><View style={{ width: '40%', height: '100%', backgroundColor: colors.primary }} /></View>
+
+                  <Text style={styles.filterLabel}>Gender</Text>
+                  <View style={styles.genderRow}>
+                      <TouchableOpacity style={[styles.genderBtn, styles.activeGender]}><Text style={styles.activeGenderText}>All</Text></TouchableOpacity>
+                      <TouchableOpacity style={styles.genderBtn}><Text style={styles.genderText}>Male</Text></TouchableOpacity>
+                      <TouchableOpacity style={styles.genderBtn}><Text style={styles.genderText}>Female</Text></TouchableOpacity>
+                  </View>
+
+                  <TouchableOpacity style={styles.applyBtn} onPress={() => setShowFilter(false)}>
+                      <Text style={styles.applyBtnText}>Apply Filters</Text>
+                  </TouchableOpacity>
+              </View>
+          </View>
       </Modal>
     </View>
   );
@@ -241,10 +331,10 @@ const getStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 30,
+    fontSize: 28,
     fontWeight: '800',
     color: colors.text,
-    letterSpacing: -0.5,
+    fontFamily: 'YoungSerif_400Regular'
   },
   headerBtn: {
     width: 44,
@@ -445,4 +535,37 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   chatButtonText: { color: colors.background, fontWeight: '700', fontSize: 16 },
   keepSwiping: { color: colors.subtext, fontSize: 14, fontWeight: '600' },
+  
+  // Detail Modal Styles
+  detailContainer: { flex: 1, backgroundColor: colors.background },
+  detailImage: { width: '100%', height: 400, resizeMode: 'cover' },
+  closeDetailBtn: { position: 'absolute', top: 50, right: 20, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 20, padding: 5 },
+  detailContent: { padding: 24, marginTop: -30, backgroundColor: colors.background, borderTopLeftRadius: 30, borderTopRightRadius: 30 },
+  detailHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  detailName: { fontSize: 28, fontWeight: '800', color: colors.text },
+  detailRole: { fontSize: 16, color: colors.subtext, marginBottom: 20 },
+  divider: { height: 1, backgroundColor: colors.border, marginBottom: 20 },
+  sectionTitle: { fontSize: 13, fontWeight: '700', color: colors.subtext, marginBottom: 10, letterSpacing: 1 },
+  bioText: { fontSize: 16, color: colors.text, lineHeight: 24, marginBottom: 24 },
+  rigCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, padding: 12, borderRadius: 16, gap: 12 },
+  rigImage: { width: 60, height: 60, borderRadius: 12 },
+  rigInfo: { flex: 1 },
+  rigTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
+  rigSub: { fontSize: 13, color: colors.subtext },
+  detailActions: { position: 'absolute', bottom: 40, width: '100%', flexDirection: 'row', justifyContent: 'center', gap: 40 },
+  
+  // Filter Modal
+  filterOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  filterBox: { backgroundColor: colors.card, padding: 24, borderTopLeftRadius: 30, borderTopRightRadius: 30 },
+  filterHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  filterTitle: { fontSize: 20, fontWeight: '800', color: colors.text },
+  filterLabel: { fontSize: 14, fontWeight: '700', color: colors.text, marginBottom: 12 },
+  sliderMock: { height: 6, backgroundColor: colors.border, borderRadius: 3, marginBottom: 24 },
+  genderRow: { flexDirection: 'row', gap: 12, marginBottom: 30 },
+  genderBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' },
+  activeGender: { backgroundColor: colors.primary, borderColor: colors.primary },
+  genderText: { color: colors.subtext, fontWeight: '600' },
+  activeGenderText: { color: '#FFF', fontWeight: '700' },
+  applyBtn: { backgroundColor: colors.primary, paddingVertical: 16, borderRadius: 16, alignItems: 'center' },
+  applyBtnText: { color: '#FFF', fontWeight: '800', fontSize: 16 }
 });

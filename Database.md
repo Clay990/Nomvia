@@ -196,6 +196,25 @@ This file serves as the source of truth for the Appwrite Database schema.
 | `user_avatar` | Url | - | No | No | Cached Sender Avatar |
 | `createdAt` | Datetime | - | Yes | No | Creation time |
 
+### 13. Requests (`requests`)
+**Collection ID:** `requests`
+**Permissions:** Read: Any, Write: Owner (Create/Update/Delete).
+
+| Attribute Name | Type | Size | Required | Array | Description |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `userId` | String | 36 | Yes | No | Requester ID |
+| `type` | String | 32 | Yes | No | 'mechanic', 'towing', 'parts', 'helper', 'other' |
+| `title` | String | 128 | Yes | No | Short title |
+| `description` | String | 1000 | Yes | No | Detailed description |
+| `latitude` | Float | - | Yes | No | Location Lat |
+| `longitude` | Float | - | Yes | No | Location Lon |
+| `urgency` | String | 32 | Yes | No | 'low', 'high', 'critical' |
+| `status` | String | 32 | Yes | No | 'open', 'in_progress', 'resolved', 'cancelled' |
+| `image` | Url | - | No | No | Photo of the issue |
+| `offer` | String | 128 | No | No | Payment or barter offer |
+| `createdAt` | Datetime | - | Yes | No | Creation time |
+| `resolvedAt` | Datetime | - | No | No | Resolution time |
+
 ## Indexing Strategy
 
 ### Frequently Queried Indexes

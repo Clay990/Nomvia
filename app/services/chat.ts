@@ -184,5 +184,101 @@ export const ChatService = {
              console.log("DM Subscription failed", e);
              return () => {};
         }
+    },
+
+    async getConversations(currentUserId: string) {
+        try {
+            // Fetch messages where user is sender or receiver
+            // This is not efficient for scaling but works for MVP. 
+            // Better approach: Maintain a 'conversations' collection.
+            
+            const [sent, received] = await Promise.all([
+                databases.listDocuments(
+                    DATABASE_ID,
+                    COLLECTIONS.MESSAGES,
+                    [
+                        Query.equal('userId', currentUserId),
+                        Query.isNotNull('receiverId'),
+                        Query.limit(100),
+                        Query.orderDesc('createdAt')
+                    ]
+                ),
+                databases.listDocuments(
+                    DATABASE_ID,
+                    COLLECTIONS.MESSAGES,
+                    [
+                        Query.equal('receiverId', currentUserId),
+                        Query.limit(100),
+                        Query.orderDesc('createdAt')
+                    ]
+                )
+            ]);
+
+            const partnerMap = new Map<string, Message>();
+
+            sent.documents.forEach((msg: any) => {
+                const partnerId = msg.receiverId;
+                if (!partnerMap.has(partnerId)) {
+                    partnerMap.set(partnerId, msg);
+                }
+            });
+
+            received.documents.forEach((msg: any) => {
+                const partnerId = msg.userId;
+                if (partnerMap.has(partnerId)) {
+                    const existing = partnerMap.get(partnerId);
+                    if (new Date(msg.createdAt) > new Date(existing!.createdAt)) {
+                        partnerMap.set(partnerId, msg);
+                    }
+                } else {
+                    partnerMap.set(partnerId, msg);
+                }
+            });
+
+            const conversations = await Promise.all(Array.from(partnerMap.entries()).map(async ([partnerId, lastMsg]) => {
+                try {
+                    // Try to fetch partner details
+                    // Assuming we have a way to fetch user by ID, or just using msg details if available
+                    // For now, let's try to fetch user doc if we can, otherwise fallback
+                    let partnerName = 'User';
+                    let partnerAvatar = '';
+
+                    // Optimization: The message might already have user_name/user_avatar
+                    // If I am the receiver, the msg.user_name is the partner.
+                    // If I am the sender, the msg doesn't have receiver's name stored typically (unless we add it).
+                    // So we usually need to fetch the profile.
+                    
+                    if (lastMsg.userId === partnerId) {
+                        partnerName = lastMsg.user_name || 'User';
+                        partnerAvatar = lastMsg.user_avatar || '';
+                    } else {
+                        const userDoc = await databases.getDocument(
+                            DATABASE_ID,
+                            COLLECTIONS.USERS,
+                            partnerId
+                        );
+                        partnerName = userDoc.username || userDoc.name || 'User';
+                        partnerAvatar = userDoc.avatar || '';
+                    }
+
+                    return {
+                        id: partnerId,
+                        user: partnerName,
+                        avatar: partnerAvatar || "https://images.unsplash.com/photo-1511367461989-f85a21fda167?q=80&w=200",
+                        lastMessage: lastMsg.content,
+                        time: new Date(lastMsg.createdAt).toLocaleDateString(), // Simple format
+                        unread: 0 
+                    };
+                } catch (e) {
+                    return null;
+                }
+            }));
+
+            return conversations.filter(Boolean);
+
+        } catch (error) {
+            console.error("Error fetching conversations", error);
+            return [];
+        }
     }
 };

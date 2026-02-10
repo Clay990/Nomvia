@@ -1,42 +1,35 @@
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React from "react";
-import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
-
-const MOCK_CHATS = [
-  {
-    id: "1",
-    user: "David",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop",
-    lastMessage: "Hey! Are you still at the campsite?",
-    time: "2m ago",
-    unread: 2,
-  },
-  {
-    id: "2",
-    user: "Jessica",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=400&auto=format&fit=crop",
-    lastMessage: "That trail was amazing! Thanks for the tip.",
-    time: "1h ago",
-    unread: 0,
-  },
-  {
-    id: "3",
-    user: "Mike (Van Mechanic)",
-    avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=400&auto=format&fit=crop",
-    lastMessage: "I can take a look at your solar setup tomorrow.",
-    time: "1d ago",
-    unread: 0,
-  }
-];
+import { ChatService } from "../services/chat";
+import { account } from "../../lib/appwrite";
 
 export default function MessagesListScreen() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
   const styles = getStyles(colors, isDark);
+  const [chats, setChats] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const renderItem = ({ item }: { item: typeof MOCK_CHATS[0] }) => (
+  useEffect(() => {
+      fetchConversations();
+  }, []);
+
+  const fetchConversations = async () => {
+      try {
+          const user = await account.get();
+          const data = await ChatService.getConversations(user.$id);
+          setChats(data);
+      } catch (e) {
+          console.log("Error loading chats", e);
+      } finally {
+          setLoading(false);
+      }
+  };
+
+  const renderItem = ({ item }: { item: any }) => (
     <TouchableOpacity 
       style={styles.chatItem} 
       onPress={() => router.push(`/messages/${item.id}`)}
@@ -65,17 +58,29 @@ export default function MessagesListScreen() {
             <Feather name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.title}>Messages</Text>
-        <TouchableOpacity style={styles.iconBtn}>
-            <Feather name="edit" size={24} color={colors.text} />
+        <TouchableOpacity style={styles.iconBtn} onPress={fetchConversations}>
+            <Feather name="refresh-cw" size={20} color={colors.text} />
         </TouchableOpacity>
       </View>
-      <FlatList
-        data={MOCK_CHATS}
-        keyExtractor={item => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContent}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-      />
+      
+      {loading ? (
+          <View style={{flex:1, justifyContent: 'center', alignItems: 'center'}}>
+              <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+      ) : (
+          <FlatList
+            data={chats}
+            keyExtractor={item => item.id}
+            renderItem={renderItem}
+            contentContainerStyle={styles.listContent}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+            ListEmptyComponent={
+                <View style={{padding: 40, alignItems: 'center'}}>
+                    <Text style={{color: colors.subtext}}>No messages yet.</Text>
+                </View>
+            }
+          />
+      )}
     </View>
   );
 }

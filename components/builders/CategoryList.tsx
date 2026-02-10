@@ -13,9 +13,10 @@ interface Category {
 interface CategoryListProps {
   categories: Category[];
   colors: any;
+  onCategorySelect: (category: string) => void;
 }
 
-const CategoryList: React.FC<CategoryListProps> = ({ categories, colors }) => {
+const CategoryList: React.FC<CategoryListProps> = ({ categories, colors, onCategorySelect }) => {
   if (categories.length === 0) return null;
 
   const styles = getStyles(colors);
@@ -29,7 +30,7 @@ const CategoryList: React.FC<CategoryListProps> = ({ categories, colors }) => {
       <Text style={styles.sectionSub}>Quick fixes, right now. Based on your location.</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
         {categories.map((cat) => (
-          <TouchableOpacity key={cat.id} style={styles.catCard}>
+          <TouchableOpacity key={cat.id} style={styles.catCard} onPress={() => onCategorySelect(cat.label)}>
             <View style={styles.catIconBox}>
               <MaterialCommunityIcons name={cat.icon as any} size={24} color={colors.text} />
             </View>

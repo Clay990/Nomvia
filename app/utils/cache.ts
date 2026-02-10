@@ -62,3 +62,39 @@ export const prefetchStory = async (url: string, id: string) => {
         }
     } catch (e) {}
 };
+
+const DATA_CACHE_DIR = FileSystem.cacheDirectory + 'data/';
+
+async function ensureDataDirExists() {
+    const dirInfo = await FileSystem.getInfoAsync(DATA_CACHE_DIR);
+    if (!dirInfo.exists) {
+        await FileSystem.makeDirectoryAsync(DATA_CACHE_DIR, { intermediates: true });
+    }
+}
+
+export const CacheService = {
+    async saveData(key: string, data: any) {
+        try {
+            await ensureDataDirExists();
+            const fileUri = DATA_CACHE_DIR + key + '.json';
+            await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(data));
+        } catch (e) {
+            console.log("Error caching data", e);
+        }
+    },
+
+    async getData(key: string) {
+        try {
+            await ensureDataDirExists();
+            const fileUri = DATA_CACHE_DIR + key + '.json';
+            const fileInfo = await FileSystem.getInfoAsync(fileUri);
+            if (fileInfo.exists) {
+                const content = await FileSystem.readAsStringAsync(fileUri);
+                return JSON.parse(content);
+            }
+        } catch (e) {
+            console.log("Error reading cache", e);
+        }
+        return null;
+    }
+};

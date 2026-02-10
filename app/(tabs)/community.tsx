@@ -1,4 +1,4 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from "expo-router";
 import React, { useEffect, useState, useCallback } from "react";
@@ -290,11 +290,24 @@ export default function CommunityScreen() {
                 <Text style={[styles.headerSub, { color: colors.subtext }]}>Connect, discuss, and meet up.</Text>
             </View>
         </View>
-        <TouchableOpacity style={styles.createButton} onPress={() => router.push('/create-campfire-post')}>
-            <MaterialCommunityIcons name="fire" size={24} color={colors.background} />
-        </TouchableOpacity>
-      </View>
-
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <TouchableOpacity 
+                  onPress={() => router.push('/messages')} 
+                  style={{ 
+                    width: 44, height: 44, borderRadius: 22, backgroundColor: colors.card, 
+                    borderWidth: 1, borderColor: colors.border,
+                    justifyContent: 'center', alignItems: 'center'
+                  }}
+                  accessibilityLabel="Messages"
+                  accessibilityRole="button"
+                >
+                  <Feather name="message-square" size={20} color={colors.text} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.createButton} onPress={() => router.push('/create-campfire-post')}>
+                    <MaterialCommunityIcons name="fire" size={24} color={colors.background} />
+                </TouchableOpacity>
+              </View>
+            </View>
       <FlatList 
         data={posts}
         renderItem={renderItem}

@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -8,19 +8,26 @@ import {
   TouchableOpacity,
   View,
   Dimensions,
-  Platform,
-  ActivityIndicator
+  ActivityIndicator,
+  Linking,
+  Alert
 } from "react-native";
+import { useRouter } from "expo-router";
 import { WebView } from "react-native-webview";
 import { useRevenueCat } from "../../context/RevenueCatContext";
 import { useTheme } from "../../context/ThemeContext";
 import { useLocation } from "../../context/LocationContext";
+import { useNetwork } from "../../context/NetworkContext";
+import { CacheService } from "../utils/cache";
 import { BuildersService, BuilderItem } from "../services/builders";
+import { CategoryStatsService, CategoryStat } from "../services/category-stats";
 
 import CategoryList from "../../components/builders/CategoryList";
 import HelperList from "../../components/builders/HelperList";
+import ServiceList from "../../components/builders/ServiceList";
 import ProBuilderList from "../../components/builders/ProBuilderList";
 import SparePartsList from "../../components/builders/SparePartsList";
+import JobList from "../../components/builders/JobList";
 
 const { width, height } = Dimensions.get('window');
 
@@ -60,6 +67,7 @@ const htmlContent = `
                 
                 if(item.type === 'pro') { color = '#F59E0B'; icon = '⭐'; } // Pro (Gold)
                 else if(item.type === 'part') { color = '#10B981'; icon = '📦'; } // Part (Green)
+                else if(item.type === 'job') { color = '#EF4444'; icon = '⚠️'; } // Job (Red)
                 else if(item.type === 'service') { color = '#6B7280'; icon = '📍'; } // Generic (Gray)
 
                 var iconHtml = '<div class="icon-circle" style="background-color: ' + color + '">' + icon + '</div>';
@@ -89,51 +97,103 @@ const htmlContent = `
 </html>
 `;
 
-// Keep categories static for navigation/filtering context
-const HELP_CATEGORIES = [
-  { id: 1, label: "Mechanics", icon: "wrench", count: 12, dist: "5 km" },
-  { id: 2, label: "Electricians", icon: "lightning-bolt", count: 8, dist: "3 km" },
-  { id: 3, label: "Carpenters", icon: "saw-blade", count: 5, dist: "10 km" },
-  { id: 4, label: "Solar Techs", icon: "solar-power", count: 4, dist: "12 km" },
-  { id: 5, label: "Towing", icon: "tow-truck", count: 2, dist: "15 km" },
+const INITIAL_CATEGORIES = [
+  { id: 1, label: "Mechanics", icon: "wrench", count: 0, dist: "..." },
+  { id: 2, label: "Electricians", icon: "lightning-bolt", count: 0, dist: "..." },
+  { id: 3, label: "Carpenters", icon: "saw-blade", count: 0, dist: "..." },
+  { id: 4, label: "Solar Techs", icon: "solar-power", count: 0, dist: "..." },
+  { id: 5, label: "Towing", icon: "tow-truck", count: 0, dist: "..." },
 ];
 
 const FILTER_CHIPS = ["All", "Mechanics", "Electricians", "Carpenters", "Solar", "Towing", "Parts"];
 
 export default function BuildersScreen() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [activeFilter, setActiveFilter] = useState("All");
+  const [categories, setCategories] = useState<CategoryStat[]>(INITIAL_CATEGORIES);
+  const [sortBy, setSortBy] = useState<'distance' | 'rating' | 'price'>('distance');
   const [items, setItems] = useState<BuilderItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mode, setMode] = useState<'helpers' | 'jobs'>('helpers');
   
   const { isPro, presentPaywall } = useRevenueCat();
   const { colors, isDark } = useTheme();
   const { location } = useLocation();
+  const { isConnected } = useNetwork();
   const styles = getStyles(colors);
   
   const webViewRef = useRef<WebView>(null);
   const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
-      fetchData();
-  }, [activeFilter, location]);
+      console.log(`[Analytics] Screen View: Service Hub - Mode: ${mode}`);
+  }, [mode]);
 
-  const fetchData = async () => {
+  useEffect(() => {
+      if (search.length > 2) {
+          console.log(`[Analytics] Search: ${search}`);
+      }
+  }, [search]);
+
+  useEffect(() => {
+      if (activeFilter !== 'All') {
+          console.log(`[Analytics] Filter Applied: ${activeFilter}`);
+      }
+  }, [activeFilter]);
+
+  const fetchData = useCallback(async () => {
       setLoading(true);
       try {
-          const data = await BuildersService.getBuildersAndHelpers(
-              location?.coords.latitude, 
-              location?.coords.longitude, 
-              activeFilter
-          );
-          setItems(data);
+          const cacheKey = `builders_${mode}_${activeFilter}`;
+          
+          const cached = await CacheService.getData(cacheKey);
+          if (cached) {
+              setItems(cached);
+              setLoading(false); 
+              
+              if (mode === 'helpers') {
+                  const updatedCategories = CategoryStatsService.calculateStats(cached, INITIAL_CATEGORIES);
+                  setCategories(updatedCategories);
+              }
+          }
+
+          if (!isConnected) {
+              setLoading(false);
+              return;
+          }
+
+          if (mode === 'helpers') {
+            const data = await BuildersService.getBuildersAndHelpers(
+                location?.coords.latitude, 
+                location?.coords.longitude, 
+                activeFilter
+            );
+            setItems(data);
+            
+            const updatedCategories = CategoryStatsService.calculateStats(data, INITIAL_CATEGORIES);
+            setCategories(updatedCategories);
+
+            CacheService.saveData(cacheKey, data);
+          } else {
+            const data = await BuildersService.getOpenJobs(
+                location?.coords.latitude || 0,
+                location?.coords.longitude || 0
+            );
+            setItems(data);
+            CacheService.saveData(cacheKey, data);
+          }
       } catch (e) {
           console.log("Error loading builders", e);
       } finally {
           setLoading(false);
       }
-  };
+  }, [activeFilter, location, mode, isConnected]);
+
+  useEffect(() => {
+      fetchData();
+  }, [fetchData]);
 
   const handleProAction = async (action?: () => void) => {
     if (isPro) {
@@ -142,6 +202,22 @@ export default function BuildersScreen() {
       await presentPaywall();
     }
   };
+  
+  const handleSOS = () => {
+      const lat = location?.coords.latitude || 0;
+      const lon = location?.coords.longitude || 0;
+      const message = `SOS! I need help. My location: https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+      const url = `sms:?body=${encodeURIComponent(message)}`;
+      
+      Alert.alert(
+          "SOS Alert", 
+          "This will open your messaging app with a pre-filled distress message containing your location.",
+          [
+              { text: "Cancel", style: "cancel" },
+              { text: "Open SMS", onPress: () => Linking.openURL(url).catch(() => Alert.alert("Error", "Could not open messaging app.")) }
+          ]
+      );
+  };
 
   const doesMatchSearch = (item: BuilderItem) => {
       const term = search.toLowerCase();
@@ -149,7 +225,28 @@ export default function BuildersScreen() {
              item.desc.toLowerCase().includes(term);
   };
 
-  const filteredItems = items.filter(doesMatchSearch);
+  const sortItems = (itemsToSort: BuilderItem[]) => {
+      return [...itemsToSort].sort((a, b) => {
+          if (sortBy === 'rating') {
+              return (b.rating || 0) - (a.rating || 0);
+          } else if (sortBy === 'price') {
+         
+             const priceA = parseInt(a.price?.replace(/[^0-9]/g, '') || '0') || parseInt(a.hourlyRate?.replace(/[^0-9]/g, '') || '0');
+             const priceB = parseInt(b.price?.replace(/[^0-9]/g, '') || '0') || parseInt(b.hourlyRate?.replace(/[^0-9]/g, '') || '0');
+             return priceA - priceB;
+          } else {
+             const distA = parseFloat(a.dist?.split(' ')[0] || '1000');
+             const distB = parseFloat(b.dist?.split(' ')[0] || '1000');
+             return distA - distB;
+          }
+      });
+  };
+
+  const filteredItems = sortItems(items.filter(doesMatchSearch));
+
+  const handleBook = (id: string) => {
+      Alert.alert("Booking", "Feature coming soon! This will open a booking calendar.");
+  };
   
   useEffect(() => {
       if (viewMode === 'map' && webViewRef.current && mapReady) {
@@ -167,14 +264,26 @@ export default function BuildersScreen() {
       }
   }, [filteredItems, viewMode, mapReady, location]);
 
-  const filteredHelpers = filteredItems.filter(i => i.type === 'helper' || i.type === 'service').map(h => ({
+  const filteredHelpers = filteredItems.filter(i => i.type === 'helper').map(h => ({
       id: h.id as any, 
       name: h.name,
       skill: h.desc,
       dist: h.dist || 'Nearby',
       image: h.image || "https://images.unsplash.com/photo-1542596594-649edbc13630?q=80&w=400",
       verified: h.verified || false,
-      coordinate: h.coordinate
+      coordinate: h.coordinate,
+      rating: h.rating,
+      hourlyRate: h.hourlyRate,
+      isMock: h.isMock
+  }));
+
+  const filteredServices = filteredItems.filter(i => i.type === 'service').map(s => ({
+      id: s.id,
+      name: s.name,
+      desc: s.desc,
+      dist: s.dist || 'Nearby',
+      image: s.image || "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?q=80&w=200",
+      coordinate: s.coordinate
   }));
 
   const filteredProBuilders = filteredItems.filter(i => i.type === 'pro').map(b => ({
@@ -194,25 +303,63 @@ export default function BuildersScreen() {
       image: p.image || "https://images.unsplash.com/photo-1581092921461-eab62e97a78e?q=80&w=200"
   }));
 
+  const filteredJobs = filteredItems.filter(i => i.type === 'job').map(j => ({
+      id: j.id as any,
+      name: j.name,
+      desc: j.desc,
+      dist: j.dist || 'Nearby',
+      image: j.image || "https://images.unsplash.com/photo-1487754180451-c456f719a1fc?q=80&w=200",
+      urgency: j.urgency,
+      offer: j.offer
+  }));
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <View>
-            <Text style={styles.headerTitle}>Service Hub</Text>
-            <Text style={styles.headerSubtitle}>Find help, parts & builders</Text>
+            <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
+                <Text style={styles.headerTitle}>Service Hub</Text>
+                {!isConnected && (
+                    <View style={styles.offlineBadge}>
+                        <MaterialCommunityIcons name="wifi-off" size={12} color="#FFF" />
+                        <Text style={styles.offlineText}>Offline Mode</Text>
+                    </View>
+                )}
+            </View>
+            <Text style={styles.headerSubtitle}>{mode === 'helpers' ? 'Find help, parts & builders' : 'Help others nearby'}</Text>
         </View>
-        <TouchableOpacity style={styles.sosButton} onPress={() => handleProAction(() => console.log('SOS triggered'))}>
-           <MaterialCommunityIcons name="alert-circle-outline" size={20} color="#FFF" />
-           <Text style={styles.sosText}>SOS</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+            <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/my-requests')}>
+                <MaterialCommunityIcons name="clipboard-list-outline" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sosButton} onPress={() => handleProAction(handleSOS)}>
+                <MaterialCommunityIcons name="alert-circle-outline" size={20} color="#FFF" />
+                <Text style={styles.sosText}>SOS</Text>
+            </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.controlsSection}>
+            <View style={styles.segmentContainer}>
+                <TouchableOpacity 
+                    style={[styles.segmentBtn, mode === 'helpers' && styles.activeSegmentBtn]} 
+                    onPress={() => setMode('helpers')}
+                >
+                    <Text style={[styles.segmentText, mode === 'helpers' && styles.activeSegmentText]}>Find Helpers</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                    style={[styles.segmentBtn, mode === 'jobs' && styles.activeSegmentBtn]} 
+                    onPress={() => setMode('jobs')}
+                >
+                    <Text style={[styles.segmentText, mode === 'jobs' && styles.activeSegmentText]}>Find Jobs</Text>
+                </TouchableOpacity>
+            </View>
+
             <View style={styles.searchRow}>
                 <View style={styles.searchContainer}>
                     <MaterialCommunityIcons name="magnify" size={20} color={colors.subtext} style={{marginRight: 8}} />
                     <TextInput 
-                        placeholder="Search services..." 
+                        placeholder={mode === 'helpers' ? "Search services..." : "Search jobs..."}
                         placeholderTextColor={colors.subtext}
                         style={styles.searchInput}
                         value={search}
@@ -221,29 +368,41 @@ export default function BuildersScreen() {
                 </View>
                 <TouchableOpacity 
                     style={styles.viewToggleBtn} 
+                    onPress={() => {
+                        const nextSort = sortBy === 'distance' ? 'rating' : sortBy === 'rating' ? 'price' : 'distance';
+                        setSortBy(nextSort);
+                        Alert.alert("Sorted by", nextSort.charAt(0).toUpperCase() + nextSort.slice(1));
+                    }}
+                >
+                    <MaterialCommunityIcons name="sort" size={24} color={colors.text} />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                    style={styles.viewToggleBtn} 
                     onPress={() => setViewMode(prev => prev === 'list' ? 'map' : 'list')}
                 >
                     <MaterialCommunityIcons name={viewMode === 'list' ? "map-outline" : "format-list-bulleted"} size={24} color={colors.text} />
                 </TouchableOpacity>
             </View>
 
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-                {FILTER_CHIPS.map((chip) => (
-                    <TouchableOpacity 
-                        key={chip} 
-                        style={[
-                            styles.filterChip, 
-                            activeFilter === chip && styles.activeFilterChip
-                        ]}
-                        onPress={() => setActiveFilter(chip)}
-                    >
-                        <Text style={[
-                            styles.filterChipText, 
-                            activeFilter === chip && styles.activeFilterChipText
-                        ]}>{chip}</Text>
-                    </TouchableOpacity>
-                ))}
-            </ScrollView>
+            {mode === 'helpers' && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+                    {FILTER_CHIPS.map((chip) => (
+                        <TouchableOpacity 
+                            key={chip} 
+                            style={[
+                                styles.filterChip, 
+                                activeFilter === chip && styles.activeFilterChip
+                            ]}
+                            onPress={() => setActiveFilter(chip)}
+                        >
+                            <Text style={[
+                                styles.filterChipText, 
+                                activeFilter === chip && styles.activeFilterChipText
+                            ]}>{chip}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
+            )}
       </View>
       
       {loading ? (
@@ -253,16 +412,47 @@ export default function BuildersScreen() {
            </View>
       ) : viewMode === 'list' ? (
           <ScrollView showsVerticalScrollIndicator={false}>
-            {activeFilter !== "Parts" && <CategoryList categories={HELP_CATEGORIES} colors={colors} />}
-            {activeFilter !== "Parts" && <HelperList helpers={filteredHelpers} colors={colors} />}
-            {(activeFilter === "All" || activeFilter === "Parts") && <SparePartsList parts={filteredParts} colors={colors} />}
-            {activeFilter !== "Parts" && (
-                <ProBuilderList 
-                    builders={filteredProBuilders} 
-                    colors={colors} 
-                    isPro={isPro} 
-                    onAction={() => handleProAction(() => console.log('Open Portfolio'))} 
-                />
+            {mode === 'helpers' ? (
+                <>
+                    {activeFilter !== "Parts" && (
+                        <CategoryList 
+                            categories={categories} 
+                            colors={colors} 
+                            onCategorySelect={setActiveFilter}
+                        />
+                    )}
+                    {activeFilter !== "Parts" && (
+                        <HelperList 
+                            helpers={filteredHelpers} 
+                            colors={colors} 
+                            onChat={(id) => router.push(`/messages/${id}`)}
+                            onProfile={(id) => router.push(`/user/${id}`)}
+                            onBook={handleBook}
+                        />
+                    )}
+                    {activeFilter !== "Parts" && (
+                        <ServiceList 
+                            services={filteredServices} 
+                            colors={colors} 
+                            onMapSelect={(coord) => {
+                               
+                                setViewMode('map');
+                            }}
+                        />
+                    )}
+                    {(activeFilter === "All" || activeFilter === "Parts") && <SparePartsList parts={filteredParts} colors={colors} />}
+                    {activeFilter !== "Parts" && (
+                        <ProBuilderList 
+                            builders={filteredProBuilders} 
+                            colors={colors} 
+                            isPro={isPro} 
+                            onAction={() => handleProAction(() => console.log('Open Portfolio'))} 
+                            onProfile={(id) => router.push(`/user/${id}`)}
+                        />
+                    )}
+                </>
+            ) : (
+                <JobList jobs={filteredJobs} colors={colors} onChat={(id) => router.push(`/messages/${id}`)} />
             )}
             
             {filteredItems.length === 0 && (
@@ -289,10 +479,14 @@ export default function BuildersScreen() {
               <View style={styles.mapFloatingCard}>
                   <Text style={styles.mapFloatingText}>Showing {filteredItems.length} results in this area</Text>
               </View>
+              
+              <TouchableOpacity style={styles.trackBtn} onPress={() => Alert.alert("Tracking", "Simulating real-time tracking of service provider...")}>
+                  <MaterialCommunityIcons name="radar" size={24} color="#FFF" />
+              </TouchableOpacity>
           </View>
       )}
 
-      <TouchableOpacity style={styles.fab} onPress={() => console.log('Request Help')}>
+      <TouchableOpacity style={styles.fab} onPress={() => router.push('/request-service')}>
             <MaterialCommunityIcons name="plus" size={28} color="#FFF" />
             <Text style={styles.fabText}>Post Request</Text>
       </TouchableOpacity>
@@ -328,6 +522,13 @@ const getStyles = (colors: any) => StyleSheet.create({
     shadowOffset: { width: 0, height: 4 }
   },
   sosText: { color: '#FFF', fontWeight: '800', fontSize: 14 },
+  iconButton: {
+      width: 44, height: 44, borderRadius: 22,
+      backgroundColor: colors.card,
+      justifyContent: 'center', alignItems: 'center',
+      borderWidth: 1, borderColor: colors.border,
+      shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 4, elevation: 2
+  },
   
   controlsSection: {
       backgroundColor: colors.card,
@@ -336,6 +537,19 @@ const getStyles = (colors: any) => StyleSheet.create({
       borderBottomColor: colors.border,
       zIndex: 10,
   },
+  segmentContainer: {
+      flexDirection: 'row',
+      marginHorizontal: 24,
+      marginBottom: 16,
+      backgroundColor: colors.secondary,
+      borderRadius: 12,
+      padding: 4
+  },
+  segmentBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 10 },
+  activeSegmentBtn: { backgroundColor: colors.card, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
+  segmentText: { fontSize: 13, fontWeight: '600', color: colors.subtext },
+  activeSegmentText: { color: colors.text, fontWeight: '700' },
+
   searchRow: { 
       paddingHorizontal: 24, 
       marginBottom: 12,
@@ -406,6 +620,22 @@ const getStyles = (colors: any) => StyleSheet.create({
       borderWidth: 2,
       borderColor: '#FFF',
       shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 4
+  },
+  
+  offlineBadge: {
+      flexDirection: 'row', alignItems: 'center', gap: 4,
+      backgroundColor: '#6B7280', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12
+  },
+  offlineText: { color: '#FFF', fontSize: 10, fontWeight: '700' },
+
+  trackBtn: {
+      position: 'absolute',
+      right: 20,
+      top: 100, 
+      width: 44, height: 44, borderRadius: 22,
+      backgroundColor: colors.primary,
+      justifyContent: 'center', alignItems: 'center',
+      shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 4
   },
 
   fab: {
