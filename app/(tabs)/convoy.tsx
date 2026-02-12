@@ -48,6 +48,17 @@ export default function ConvoyScreen() {
 
   const [postOptionsVisible, setPostOptionsVisible] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const user = await account.get();
+        setCurrentUserId(user.$id);
+      } catch (e) { console.log('Error getting user', e); }
+    };
+    fetchUser();
+  }, []);
 
   useEffect(() => {
     const fetchUserInterests = async () => {
@@ -131,12 +142,36 @@ export default function ConvoyScreen() {
       setPostOptionsVisible(true);
   }, []);
 
-  const handleOptionSelect = (option: 'share' | 'report' | 'block') => {
+  const handleOptionSelect = async (option: 'share' | 'report' | 'block' | 'delete') => {
       setPostOptionsVisible(false);
-      setTimeout(() => {
-          if (option === 'report') Alert.alert("Reported", "Thanks for keeping the convoy safe.");
-          if (option === 'block') Alert.alert("Blocked", "You won't see posts from this user.");
-      }, 500);
+      if (!selectedPostId) return;
+
+      if (option === 'delete') {
+          Alert.alert(
+              "Delete Post",
+              "Are you sure you want to delete this post?",
+              [
+                  { text: "Cancel", style: "cancel" },
+                  { 
+                      text: "Delete", 
+                      style: "destructive", 
+                      onPress: async () => {
+                          try {
+                              await PostsService.deletePost(selectedPostId);
+                              setPosts(prev => prev.filter(p => p.$id !== selectedPostId));
+                          } catch (e) {
+                              Alert.alert("Error", "Failed to delete post.");
+                          }
+                      }
+                  }
+              ]
+          );
+      } else {
+          setTimeout(() => {
+              if (option === 'report') Alert.alert("Reported", "Thanks for keeping the convoy safe.");
+              if (option === 'block') Alert.alert("Blocked", "You won't see posts from this user.");
+          }, 500);
+      }
   };
 
   const getDistanceString = useCallback((post: Post) => {
@@ -267,6 +302,7 @@ export default function ConvoyScreen() {
         visible={postOptionsVisible}
         onClose={() => setPostOptionsVisible(false)}
         onSelect={handleOptionSelect}
+        isOwner={currentUserId === posts.find(p => p.$id === selectedPostId)?.userId}
       />
     </View>
   );

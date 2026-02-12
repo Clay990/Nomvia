@@ -47,6 +47,7 @@ app-example
 # Info Folder
 /ContestInfo/
 /functions
+/files
 # Database Setup Script (Contains Secrets)
 setup_database.js
 

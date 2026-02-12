@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import {
   Alert,
   Button,
+  Modal,
   ScrollView,
   StyleSheet,
   Switch,
@@ -22,10 +23,11 @@ const ACCOUNT_CREATED = "January 2024";
 export default function SettingsScreen() {
   const router = useRouter();
   const { isDark, toggleTheme, colors } = useTheme();
-  const { isPro, presentCustomerCenter, restorePurchases } = useRevenueCat();
+  const { isPro, presentCustomerCenter, restorePurchases, presentPaywall } = useRevenueCat();
   const { logout } = useAuth();
   const [pushEnabled, setPushEnabled] = useState(true);
   const [locationEnabled, setLocationEnabled] = useState(true);
+  const [showBenefits, setShowBenefits] = useState(false);
 
   const styles = getStyles(colors, isDark);
 
@@ -46,8 +48,55 @@ export default function SettingsScreen() {
     );
   };
 
+  const PRO_FEATURES = [
+      { title: "Priority SOS Alerts", desc: "Enhanced emergency notifications" },
+      { title: "Unlimited Swipes", desc: "No limits in the Connect section" },
+      { title: "Who Liked You", desc: "See who's interested before you swipe" },
+      { title: "Profile Boosts", desc: "Increase your visibility to other nomads" },
+      { title: "Custom Themes", desc: "Personalize your profile appearance" },
+      { title: "Profile Analytics", desc: "Track your engagement and reach" },
+      { title: "Ad-Free Experience", desc: "Enjoy Nomvia without interruptions" }
+  ];
+
   return (
     <View style={styles.container}>
+      <Modal
+        visible={showBenefits}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowBenefits(false)}
+      >
+        <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>Nomvia Pro Benefits</Text>
+                    <TouchableOpacity onPress={() => setShowBenefits(false)}>
+                        <Feather name="x" size={24} color={colors.text} />
+                    </TouchableOpacity>
+                </View>
+                <ScrollView contentContainerStyle={styles.benefitsList} showsVerticalScrollIndicator={false}>
+                    {PRO_FEATURES.map((feature, index) => (
+                        <View key={index} style={styles.benefitItem}>
+                            <Feather name="check-circle" size={20} color="#F59E0B" style={{ marginTop: 2 }} />
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.benefitTitle}>{feature.title}</Text>
+                                <Text style={styles.benefitDesc}>{feature.desc}</Text>
+                            </View>
+                        </View>
+                    ))}
+                    {!isPro && (
+                        <TouchableOpacity 
+                            style={styles.upgradeBtn} 
+                            onPress={() => { setShowBenefits(false); presentPaywall(); }}
+                        >
+                            <Text style={styles.upgradeBtnText}>Upgrade Now</Text>
+                        </TouchableOpacity>
+                    )}
+                </ScrollView>
+            </View>
+        </View>
+      </Modal>
+
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Feather name="arrow-left" size={24} color={colors.text} />
@@ -79,15 +128,18 @@ export default function SettingsScreen() {
 
         <View style={styles.section}>
             <Text style={styles.sectionTitle}>Membership</Text>
-            <View style={styles.row}>
+            <TouchableOpacity style={styles.row} onPress={() => setShowBenefits(true)}>
                 <View style={styles.rowLeft}>
                     <Feather name="star" size={22} color={isPro ? "#F59E0B" : colors.icon} />
                     <Text style={styles.rowLabel}>Nomvia Pro</Text>
                 </View>
-                <Text style={{ color: isPro ? "#F59E0B" : colors.subtext, fontWeight: '600' }}>
-                  {isPro ? "Active" : "Free Plan"}
-                </Text>
-            </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Text style={{ color: isPro ? "#F59E0B" : colors.subtext, fontWeight: '600' }}>
+                    {isPro ? "Active" : "Free Plan"}
+                    </Text>
+                    <Feather name="info" size={16} color={colors.subtext} />
+                </View>
+            </TouchableOpacity>
             <View style={styles.divider} />
             <TouchableOpacity style={styles.row} onPress={presentCustomerCenter}>
                 <View style={styles.rowLeft}>
@@ -246,4 +298,47 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   
   metaInfo: { alignItems: 'center', gap: 4 },
   metaText: { fontSize: 12, color: colors.subtext },
+
+  modalOverlay: {
+      flex: 1,
+      justifyContent: 'flex-end',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+      backgroundColor: colors.card,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      padding: 24,
+      paddingBottom: 40,
+      maxHeight: '80%',
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: -4 },
+      shadowOpacity: 0.25,
+      shadowRadius: 8,
+      elevation: 5,
+  },
+  modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 20,
+  },
+  modalTitle: { fontSize: 20, fontWeight: '800', color: colors.text },
+  benefitsList: { paddingBottom: 20 },
+  benefitItem: { flexDirection: 'row', gap: 12, marginBottom: 20 },
+  benefitTitle: { fontSize: 15, fontWeight: '700', color: colors.text, marginBottom: 2 },
+  benefitDesc: { fontSize: 13, color: colors.subtext, lineHeight: 18 },
+  upgradeBtn: {
+      backgroundColor: colors.primary,
+      paddingVertical: 16,
+      borderRadius: 16,
+      alignItems: 'center',
+      marginTop: 10,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 4,
+  },
+  upgradeBtnText: { color: '#FFF', fontWeight: '700', fontSize: 16 },
 });

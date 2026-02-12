@@ -218,6 +218,19 @@ export const PostsService = {
         }
     },
 
+    async deletePost(postId: string) {
+        try {
+            return await databases.deleteDocument(
+                DATABASE_ID,
+                COLLECTIONS.POSTS,
+                postId
+            );
+        } catch (error) {
+            console.error('Error deleting post:', error);
+            throw error;
+        }
+    },
+
     async likePost(postId: string, currentLikes: number) {
         try {
             return await databases.updateDocument(

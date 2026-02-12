@@ -193,6 +193,66 @@ export const DatingService = {
         }
     },
 
+    async getDailySwipeCount(userId: string): Promise<number> {
+        try {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const swipes = await databases.listDocuments(
+                DATABASE_ID,
+                COLLECTIONS.SWIPES,
+                [
+                    Query.equal('initiatorId', userId),
+                    Query.greaterThan('timestamp', today.toISOString()),
+                    Query.limit(100) 
+                ]
+            );
+            return swipes.total;
+        } catch (error) {
+            console.error('Error fetching daily swipe count:', error);
+            return 0;
+        }
+    },
+
+    async getPendingLikes(userId: string): Promise<DatingProfile[]> {
+        try {
+            const likesReceived = await databases.listDocuments(
+                DATABASE_ID,
+                COLLECTIONS.SWIPES,
+                [
+                    Query.equal('targetId', userId),
+                    Query.equal('type', 'like'),
+                    Query.limit(100)
+                ]
+            );
+
+            const mySwipes = await databases.listDocuments(
+                DATABASE_ID,
+                COLLECTIONS.SWIPES,
+                [
+                    Query.equal('initiatorId', userId),
+                    Query.limit(100)
+                ]
+            );
+            const mySwipedIds = new Set(mySwipes.documents.map(doc => doc.targetId));
+
+            const pendingLikersIds = likesReceived.documents
+                .map(doc => doc.initiatorId)
+                .filter(id => !mySwipedIds.has(id));
+
+            if (pendingLikersIds.length === 0) return [];
+
+            const profiles = await Promise.all(
+                pendingLikersIds.map(id => DatingService.getUserProfile(id).catch(() => null))
+            );
+
+            return profiles.filter(Boolean) as DatingProfile[];
+        } catch (error) {
+            console.error('Error fetching pending likes:', error);
+            return [];
+        }
+    },
+
     async getUserProfile(userId: string): Promise<DatingProfile> {
         try {
             const doc = await databases.getDocument(

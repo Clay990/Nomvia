@@ -1,4 +1,4 @@
-import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from "expo-router";
 import React, { useEffect, useState, useCallback } from "react";
@@ -16,8 +16,12 @@ import {
 } from "react-native";
 import { Snackbar } from 'react-native-paper';
 import { PostsService } from '../services/posts';
+import { account } from '../../lib/appwrite';
 import { CirclesService } from '../services/circles';
 import { Post } from '../types';
+import FeedHeader from "../../components/convoy/FeedHeader";
+import AnimatedHeader from "../../components/convoy/AnimatedHeader";
+import PostOptionsModal from "../../components/PostOptionsModal";
 import PostCard from '../../components/PostCard';
 import SkeletonPost from '../../components/SkeletonPost';
 import { events } from '../utils/events';
@@ -100,6 +104,59 @@ export default function CommunityScreen() {
         fetchPosts();
     });
     return () => { unsubscribe(); };
+  }, []);
+
+  const [postOptionsVisible, setPostOptionsVisible] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const user = await account.get();
+        setCurrentUserId(user.$id);
+      } catch (e) { console.log('Error getting user', e); }
+    };
+    fetchUser();
+  }, []);
+
+  const handleOptionSelect = async (option: 'share' | 'report' | 'block' | 'delete') => {
+      setPostOptionsVisible(false);
+      if (!selectedPostId) return;
+
+      if (option === 'delete') {
+          Alert.alert(
+              "Delete Post",
+              "Are you sure you want to delete this post?",
+              [
+                  { text: "Cancel", style: "cancel" },
+                  { 
+                      text: "Delete", 
+                      style: "destructive", 
+                      onPress: async () => {
+                          try {
+                              await PostsService.deletePost(selectedPostId);
+                              setPosts(prev => prev.filter(p => p.$id !== selectedPostId));
+                              showToast("Post deleted.");
+                          } catch (e) {
+                              Alert.alert("Error", "Failed to delete post.");
+                          }
+                      }
+                  }
+              ]
+          );
+      } else {
+          setTimeout(() => {
+              if (option === 'report') handleReport(selectedPostId);
+              if (option === 'block') Alert.alert("Blocked", "You won't see posts from this user.");
+              if (option === 'share') Alert.alert("Share", "Sharing feature coming soon.");
+          }, 500);
+      }
+  };
+
+  const handleMoreOptions = useCallback((postId: string) => {
+      setSelectedPostId(postId);
+      setPostOptionsVisible(true);
   }, []);
 
   const handleReport = (postId: string) => {
@@ -290,24 +347,11 @@ export default function CommunityScreen() {
                 <Text style={[styles.headerSub, { color: colors.subtext }]}>Connect, discuss, and meet up.</Text>
             </View>
         </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <TouchableOpacity 
-                  onPress={() => router.push('/messages')} 
-                  style={{ 
-                    width: 44, height: 44, borderRadius: 22, backgroundColor: colors.card, 
-                    borderWidth: 1, borderColor: colors.border,
-                    justifyContent: 'center', alignItems: 'center'
-                  }}
-                  accessibilityLabel="Messages"
-                  accessibilityRole="button"
-                >
-                  <Feather name="message-square" size={20} color={colors.text} />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.createButton} onPress={() => router.push('/create-campfire-post')}>
-                    <MaterialCommunityIcons name="fire" size={24} color={colors.background} />
-                </TouchableOpacity>
-              </View>
-            </View>
+        <TouchableOpacity style={styles.createButton} onPress={() => router.push('/create-campfire-post')}>
+            <MaterialCommunityIcons name="fire" size={24} color={colors.background} />
+        </TouchableOpacity>
+      </View>
+
       <FlatList 
         data={posts}
         renderItem={renderItem}
@@ -350,6 +394,13 @@ export default function CommunityScreen() {
       >
         <Text style={{ color: colors.background, fontWeight: '600' }}>{snackbarMessage}</Text>
       </Snackbar>
+
+      <PostOptionsModal 
+        visible={postOptionsVisible}
+        onClose={() => setPostOptionsVisible(false)}
+        onSelect={handleOptionSelect}
+        isOwner={currentUserId === posts.find(p => p.$id === selectedPostId)?.userId}
+      />
     </View>
   );
 }

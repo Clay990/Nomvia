@@ -12,7 +12,9 @@ import {
   View
 } from "react-native";
 import { account } from "../../lib/appwrite";
-import { DatingService } from "../services/dating";
+import { DatingService, DatingProfile } from "../services/dating";
+import { useRevenueCat } from "../../context/RevenueCatContext";
+import { useTheme } from "../../context/ThemeContext";
 
 type MatchItem = {
     $id: string; 
@@ -25,19 +27,25 @@ type MatchItem = {
 
 export default function MatchesScreen() {
   const router = useRouter();
+  const { isPro, presentPaywall } = useRevenueCat();
+  const { colors } = useTheme();
+  
+  const [activeTab, setActiveTab] = useState<'matches' | 'likes'>('matches');
   const [matches, setMatches] = useState<MatchItem[]>([]);
+  const [likes, setLikes] = useState<DatingProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    loadMatches();
+    loadData();
   }, []);
 
-  const loadMatches = async () => {
+  const loadData = async () => {
     try {
       const user = await account.get();
-      const matchDocs = await DatingService.getMatches(user.$id);
       
+      // Load Matches
+      const matchDocs = await DatingService.getMatches(user.$id);
       const formattedMatches = await Promise.all(matchDocs.map(async (doc: any) => {
           const partnerId = doc.userA === user.$id ? doc.userB : doc.userA;
           const partnerProfile = await DatingService.getUserProfile(partnerId);
@@ -51,10 +59,13 @@ export default function MatchesScreen() {
               lastMessage: "Start the conversation!" 
           };
       }));
-
       setMatches(formattedMatches);
+
+      const pendingLikes = await DatingService.getPendingLikes(user.$id);
+      setLikes(pendingLikes);
+
     } catch (error) {
-      console.log("Error loading matches", error);
+      console.log("Error loading data", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -63,51 +74,115 @@ export default function MatchesScreen() {
 
   const onRefresh = () => {
       setRefreshing(true);
-      loadMatches();
+      loadData();
   };
 
-  const renderItem = ({ item }: { item: MatchItem }) => (
+  const renderMatchItem = ({ item }: { item: MatchItem }) => (
     <TouchableOpacity 
-        style={styles.matchItem} 
+        style={[styles.matchItem, { backgroundColor: colors.card }]} 
         onPress={() => router.push(`/messages/${item.partnerId}`)}
     >
         <Image source={{ uri: item.image }} style={styles.avatar} />
         <View style={styles.info}>
-            <Text style={styles.name}>{item.name}</Text>
+            <Text style={[styles.name, { color: colors.text }]}>{item.name}</Text>
             <Text style={styles.message}>{item.lastMessage}</Text>
         </View>
-        <Feather name="chevron-right" size={20} color="#CCC" />
+        <Feather name="chevron-right" size={20} color={colors.subtext} />
+    </TouchableOpacity>
+  );
+
+  const renderLikeItem = ({ item }: { item: DatingProfile }) => (
+    <TouchableOpacity 
+        style={[styles.matchItem, { backgroundColor: colors.card, opacity: isPro ? 1 : 0.8 }]} 
+        onPress={() => {
+            if (!isPro) {
+                presentPaywall();
+            } else {
+                 router.push(`/user/${item.$id}`);
+            }
+        }}
+    >
+        <Image 
+            source={{ uri: item.image }} 
+            style={[styles.avatar, !isPro && { opacity: 0.1 }]} 
+            blurRadius={!isPro ? 10 : 0}
+        />
+        <View style={styles.info}>
+            <Text style={[styles.name, { color: colors.text }]}>
+                {isPro ? item.name : "Someone likes you"}
+            </Text>
+            <Text style={styles.message}>
+                {isPro ? "Tap to view profile" : "Upgrade to see who"}
+            </Text>
+        </View>
+        {!isPro && <Feather name="lock" size={20} color="#F59E0B" />}
     </TouchableOpacity>
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-             <Feather name="arrow-left" size={24} color="#111" />
+             <Feather name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Matches</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Connections</Text>
         <View style={{ width: 24 }} />
+      </View>
+
+      <View style={styles.tabContainer}>
+          <TouchableOpacity 
+            style={[styles.tab, activeTab === 'matches' && { borderBottomColor: colors.primary }]} 
+            onPress={() => setActiveTab('matches')}
+          >
+              <Text style={[styles.tabText, activeTab === 'matches' ? { color: colors.primary } : { color: colors.subtext }]}>Matches</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.tab, activeTab === 'likes' && { borderBottomColor: colors.primary }]} 
+            onPress={() => setActiveTab('likes')}
+          >
+              <Text style={[styles.tabText, activeTab === 'likes' ? { color: colors.primary } : { color: colors.subtext }]}>Likes You</Text>
+              {!isPro && likes.length > 0 && (
+                  <View style={styles.badge}>
+                      <Text style={styles.badgeText}>{likes.length}</Text>
+                  </View>
+              )}
+          </TouchableOpacity>
       </View>
 
       {loading ? (
           <View style={styles.center}>
-              <ActivityIndicator size="large" color="#1A2E05" />
+              <ActivityIndicator size="large" color={colors.primary} />
           </View>
-      ) : (
+      ) : activeTab === 'matches' ? (
           <FlatList
             data={matches}
-            renderItem={renderItem}
+            renderItem={renderMatchItem}
             keyExtractor={item => item.$id}
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={
                 <View style={styles.emptyContainer}>
-                    <Feather name="heart" size={48} color="#CCC" />
-                    <Text style={styles.emptyText}>No matches yet. Keep swiping!</Text>
+                    <Feather name="heart" size={48} color={colors.border} />
+                    <Text style={[styles.emptyText, { color: colors.subtext }]}>No matches yet. Keep swiping!</Text>
                 </View>
             }
             refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+            }
+          />
+      ) : (
+          <FlatList
+            data={likes}
+            renderItem={renderLikeItem}
+            keyExtractor={item => item.$id}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                    <Feather name="users" size={48} color={colors.border} />
+                    <Text style={[styles.emptyText, { color: colors.subtext }]}>No new likes yet.</Text>
+                </View>
+            }
+            refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
             }
           />
       )}
@@ -190,7 +265,37 @@ const styles = StyleSheet.create({
   emptyText: {
       marginTop: 16,
       fontSize: 16,
-      color: '#6B7280',
       fontWeight: '500'
+  },
+  tabContainer: {
+      flexDirection: 'row',
+      borderBottomWidth: 1,
+      borderColor: 'rgba(0,0,0,0.05)',
+  },
+  tab: {
+      flex: 1,
+      alignItems: 'center',
+      paddingVertical: 16,
+      borderBottomWidth: 2,
+      borderColor: 'transparent',
+      position: 'relative'
+  },
+  tabText: {
+      fontWeight: '600',
+      fontSize: 14
+  },
+  badge: {
+      position: 'absolute',
+      top: 8,
+      right: '25%',
+      backgroundColor: '#EF4444',
+      borderRadius: 10,
+      paddingHorizontal: 6,
+      paddingVertical: 2
+  },
+  badgeText: {
+      color: '#FFF',
+      fontSize: 10,
+      fontWeight: '700'
   }
 });

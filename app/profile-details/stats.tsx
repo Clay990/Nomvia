@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../context/ThemeContext';
+import { useRevenueCat } from '../../context/RevenueCatContext';
 
 const { width } = Dimensions.get('window');
 
@@ -26,6 +27,7 @@ const MONTHLY_ACTIVITY = [
 export default function StatsScreen() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
+  const { isPro, presentPaywall } = useRevenueCat();
   
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const barAnims = useRef(MONTHLY_ACTIVITY.map(() => new Animated.Value(0))).current;
@@ -110,7 +112,16 @@ export default function StatsScreen() {
          </View>
 
          <View style={[styles.chartCard, cardStyle]}>
-             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+             {!isPro && (
+                 <View style={styles.lockOverlay}>
+                     <MaterialCommunityIcons name="lock" size={48} color={colors.text} />
+                     <Text style={[styles.lockText, { color: colors.text }]}>Unlock Advanced Analytics</Text>
+                     <TouchableOpacity style={styles.upgradeBtn} onPress={presentPaywall}>
+                         <Text style={styles.upgradeBtnText}>Upgrade to Pro</Text>
+                     </TouchableOpacity>
+                 </View>
+             )}
+             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, opacity: isPro ? 1 : 0.1 }}>
                  <View>
                     <Text style={[styles.sectionTitle, textStyle]}>Activity Trends</Text>
                     <Text style={[styles.chartSub, subtextStyle]}>Distance traveled (km) • Last 6 months</Text>
@@ -120,7 +131,7 @@ export default function StatsScreen() {
                  </TouchableOpacity>
              </View>
              
-             <View style={styles.mockChart}>
+             <View style={[styles.mockChart, { opacity: isPro ? 1 : 0.1 }]}>
                  {MONTHLY_ACTIVITY.map((data, i) => {
                      const maxKm = Math.max(...MONTHLY_ACTIVITY.map(d => d.km));
                      const heightPercent = (data.km / maxKm) * 100;
@@ -148,35 +159,46 @@ export default function StatsScreen() {
          </View>
 
          <View style={[styles.chartCard, cardStyle, { marginTop: 16 }]}>
-            <Text style={[styles.sectionTitle, textStyle]}>Popular Routes</Text>
-            <Text style={[styles.chartSub, subtextStyle]}>Most traveled by your connections</Text>
-            
-            <View style={styles.routeItem}>
-                <View style={[styles.rankBadge, { backgroundColor: '#F59E0B' }]}>
-                    <Text style={styles.rankText}>1</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                    <Text style={[styles.routeName, textStyle]}>Manali - Leh Highway</Text>
-                    <View style={styles.routeMeta}>
-                        <MaterialCommunityIcons name="account-group" size={14} color={colors.subtext} />
-                        <Text style={[styles.routeMetaText, subtextStyle]}>12 friends recently</Text>
+            {!isPro && (
+                 <View style={styles.lockOverlay}>
+                     <MaterialCommunityIcons name="lock" size={48} color={colors.text} />
+                     <Text style={[styles.lockText, { color: colors.text }]}>Unlock Route Insights</Text>
+                     <TouchableOpacity style={styles.upgradeBtn} onPress={presentPaywall}>
+                         <Text style={styles.upgradeBtnText}>Upgrade to Pro</Text>
+                     </TouchableOpacity>
+                 </View>
+             )}
+            <View style={{ opacity: isPro ? 1 : 0.1 }}>
+                <Text style={[styles.sectionTitle, textStyle]}>Popular Routes</Text>
+                <Text style={[styles.chartSub, subtextStyle]}>Most traveled by your connections</Text>
+                
+                <View style={styles.routeItem}>
+                    <View style={[styles.rankBadge, { backgroundColor: '#F59E0B' }]}>
+                        <Text style={styles.rankText}>1</Text>
                     </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={[styles.routeName, textStyle]}>Manali - Leh Highway</Text>
+                        <View style={styles.routeMeta}>
+                            <MaterialCommunityIcons name="account-group" size={14} color={colors.subtext} />
+                            <Text style={[styles.routeMetaText, subtextStyle]}>12 friends recently</Text>
+                        </View>
+                    </View>
+                    <MaterialCommunityIcons name="chevron-right" size={24} color={colors.subtext} />
                 </View>
-                <MaterialCommunityIcons name="chevron-right" size={24} color={colors.subtext} />
-            </View>
 
-            <View style={[styles.routeItem, { borderBottomWidth: 0 }]}>
-                <View style={[styles.rankBadge, { backgroundColor: '#64748B' }]}>
-                    <Text style={styles.rankText}>2</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                    <Text style={[styles.routeName, textStyle]}>Konkan Coast (Mumbai - Goa)</Text>
-                    <View style={styles.routeMeta}>
-                        <MaterialCommunityIcons name="account-group" size={14} color={colors.subtext} />
-                        <Text style={[styles.routeMetaText, subtextStyle]}>8 friends recently</Text>
+                <View style={[styles.routeItem, { borderBottomWidth: 0 }]}>
+                    <View style={[styles.rankBadge, { backgroundColor: '#64748B' }]}>
+                        <Text style={styles.rankText}>2</Text>
                     </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={[styles.routeName, textStyle]}>Konkan Coast (Mumbai - Goa)</Text>
+                        <View style={styles.routeMeta}>
+                            <MaterialCommunityIcons name="account-group" size={14} color={colors.subtext} />
+                            <Text style={[styles.routeMetaText, subtextStyle]}>8 friends recently</Text>
+                        </View>
+                    </View>
+                    <MaterialCommunityIcons name="chevron-right" size={24} color={colors.subtext} />
                 </View>
-                <MaterialCommunityIcons name="chevron-right" size={24} color={colors.subtext} />
             </View>
          </View>
          
@@ -256,5 +278,37 @@ const styles = StyleSheet.create({
   rankText: { color: '#FFF', fontWeight: '700', fontSize: 12 },
   routeName: { fontWeight: '700', fontSize: 15, marginBottom: 4 },
   routeMeta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  routeMetaText: { fontSize: 12 }
+  routeMetaText: { fontSize: 12 },
+
+  lockOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 10,
+      backgroundColor: 'rgba(0,0,0,0.02)'
+  },
+  lockText: {
+      fontSize: 18,
+      fontWeight: '700',
+      marginVertical: 12,
+  },
+  upgradeBtn: {
+      backgroundColor: '#F59E0B', 
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+      borderRadius: 20,
+      shadowColor: "#F59E0B",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 6,
+      elevation: 4
+  },
+  upgradeBtnText: {
+      color: '#FFF',
+      fontWeight: '700'
+  }
 });

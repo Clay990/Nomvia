@@ -236,7 +236,7 @@ export default function ProfileScreen() {
         <View style={styles.contentBody}>
             {activeTab === 'Overview' && (
                 <View style={styles.fadeIn}>
-                     <View style={styles.reputationCard}>
+                     {/* <View style={styles.reputationCard}>
                          <View style={styles.repRow}>
                              <View>
                                  <Text style={styles.repTitle}>Reputation</Text>
@@ -247,7 +247,7 @@ export default function ProfileScreen() {
                              </View>
                          </View>
                          <View style={styles.repBarBg}><View style={[styles.repBarFill, { width: '85%' }]} /></View>
-                     </View>
+                     </View> */}
 
                      <StatsGrid snapshots={DATA.snapshot} />
                      <BioSection bio={DATA.bio} interests={DATA.interests} />

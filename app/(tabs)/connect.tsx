@@ -16,12 +16,14 @@ import {
 import { account } from "../../lib/appwrite";
 import { DatingProfile, DatingService } from "../services/dating";
 import { useTheme } from "../../context/ThemeContext";
+import { useRevenueCat } from "../../context/RevenueCatContext";
 
 const { width, height } = Dimensions.get('window');
 
 export default function ConnectScreen() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
+  const { isPro, presentPaywall } = useRevenueCat();
   const styles = getStyles(colors);
   const [profiles, setProfiles] = useState<DatingProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,6 +59,14 @@ export default function ConnectScreen() {
     setShowDetail(false);
 
     try {
+        if (!isPro) {
+            const swipeCount = await DatingService.getDailySwipeCount(currentUserId);
+            if (swipeCount >= 10) {
+                await presentPaywall();
+                return;
+            }
+        }
+
         const type = direction === 'right' ? 'like' : 'pass';
         
         if (type === 'pass') {
