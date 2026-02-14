@@ -34,6 +34,7 @@ export interface Post {
     expiresAt?: string;
     engagementScore?: number;
     isSensitive?: boolean; 
+    circleId?: string;
 }
 
 export interface Comment {
@@ -79,6 +80,18 @@ export interface Message {
     content: string;
     type: 'text' | 'image' | 'system';
     user_name?: string;
-    user_avatar?: string;
-    createdAt: string;
-}
+        user_avatar?: string;
+        createdAt: string;
+    }
+    
+    export interface Circle {
+        id: string;
+        name: string;
+        image?: string;
+        members: number;
+            description?: string;
+            isPrivate?: boolean;
+            notification?: number;
+            teamId?: string;
+        }
+        

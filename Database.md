@@ -69,6 +69,7 @@ This file serves as the source of truth for the Appwrite Database schema.
 | `isActive` | Boolean | - | No | No | Whether the post is still active |
 | `expiresAt` | Datetime | - | No | No | When the post expires |
 | `privacy` | String | 32 | No | No | 'public', 'friends', 'private' |
+| `circleId` | String | 36 | No | No | Linked Circle ID for private/group posts |
 | `engagementScore` | Float | - | No | No | Algorithmic score for relevance |
 
 ### 3. Matches (`matches`)

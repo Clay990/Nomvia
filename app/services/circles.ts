@@ -1,5 +1,5 @@
 import { ID, Query } from 'react-native-appwrite';
-import { databases, account, storage, APPWRITE_BUCKET_ID, APPWRITE_PROJECT_ID, APPWRITE_ENDPOINT } from '../../lib/appwrite';
+import { databases, account, storage, teams, APPWRITE_BUCKET_ID, APPWRITE_PROJECT_ID, APPWRITE_ENDPOINT } from '../../lib/appwrite';
 import { APPWRITE_CONFIG } from '../config/appwrite-schema';
 
 const { DATABASE_ID, COLLECTIONS } = APPWRITE_CONFIG;
@@ -32,6 +32,14 @@ export const CirclesService = {
                 }
             }
 
+            let teamId = null;
+            try {
+                const team = await teams.create(ID.unique(), data.name);
+                teamId = team.$id;
+            } catch (teamError) {
+                console.error("Failed to create team for circle:", teamError);
+            }
+
             const circle = await databases.createDocument(
                 DATABASE_ID,
                 COLLECTIONS.CIRCLES,
@@ -44,7 +52,8 @@ export const CirclesService = {
                     inviteCode: inviteCode,
                     membersCount: 1,
                     ownerId: user.$id,
-                    createdAt: new Date().toISOString()
+                    createdAt: new Date().toISOString(),
+                    teamId: teamId
                 }
             );
 
@@ -167,6 +176,7 @@ export const CirclesService = {
                 members: circle.membersCount || 0,
                 description: circle.description,
                 isPrivate: circle.isPrivate,
+                teamId: circle.teamId,
             };
         } catch (error) {
             console.error("Error fetching circle details", error);

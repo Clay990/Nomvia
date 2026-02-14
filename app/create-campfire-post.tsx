@@ -144,7 +144,8 @@ export default function CreateCampfirePostScreen() {
             meetupTime: time,
             link: formattedLink || undefined, 
             image: selectedImage || undefined,
-            privacy: params.isPrivate === 'true' ? 'private' : 'public'
+            privacy: params.isPrivate === 'true' ? 'private' : 'public',
+            circleId: params.circleId ? (params.circleId as string) : undefined
         });
 
         events.emit('post_created');

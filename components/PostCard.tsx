@@ -271,6 +271,11 @@ export default function PostCard({ post, onLike, onComment, onOpen, onMoreOption
                                     Lvl {Math.max(1, (post.user_name?.length || 0) % 10)}
                                 </Text>
                             </View>
+                            {!post.image && displayType && (
+                                <View style={{ backgroundColor: isDark ? '#333' : '#F3F4F6', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
+                                    <Text style={{ fontSize: 10, fontWeight: '700', color: colors.text }}>{displayType}</Text>
+                                </View>
+                            )}
                         </TouchableOpacity>
                         
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
@@ -326,14 +331,6 @@ export default function PostCard({ post, onLike, onComment, onOpen, onMoreOption
                                 ) : null}
                             </View>
                         )}
-                    </View>
-                )}
-
-                {!post.image && displayType && (
-                    <View style={{ flexDirection: 'row', marginBottom: 8 }}>
-                        <View style={[styles.miniTag, { backgroundColor: isDark ? '#333' : '#F3F4F6' }]}>
-                            <Text style={{ fontSize: 10, fontWeight: '700', color: colors.text }}>{displayType}</Text>
-                        </View>
                     </View>
                 )}
 
@@ -563,12 +560,6 @@ const styles = StyleSheet.create({
   },
   timestamp: {
     fontSize: 11,
-  },
-  miniTag: {
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 8,
-      marginLeft: 'auto',
   },
   dotSeparator: {
       width: 3, 

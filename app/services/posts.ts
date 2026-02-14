@@ -1,4 +1,4 @@
-import { Query, ID } from 'react-native-appwrite';
+import { Query, ID, Permission, Role } from 'react-native-appwrite';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { APPWRITE_CONFIG } from '../config/appwrite-schema';
 import { Post } from '../types';
@@ -14,7 +14,8 @@ export const PostsService = {
         feedType = 'latest', 
         searchQuery = '',
         category = 'All',
-        userInterests = []
+        userInterests = [],
+        circleId
     }: { 
         lastId?: string; 
         limit?: number; 
@@ -22,6 +23,7 @@ export const PostsService = {
         searchQuery?: string;
         category?: string;
         userInterests?: string[];
+        circleId?: string;
     }) {
         const cacheKey = `posts_cache_${category}_${feedType}`;
         
@@ -47,6 +49,11 @@ export const PostsService = {
                 queries.push(Query.search('content', searchQuery));
                 queries.push(Query.equal('privacy', 'public'));
             } 
+            else if (circleId) {
+                queries.push(Query.equal('circleId', circleId));
+                // We rely on Appwrite Permissions for privacy, or we can filter further
+                // queries.push(Query.orderDesc('timestamp')); // Order is added below
+            }
             else {
                 if (category && category !== 'All') {
                     if (category === 'Meetups') {
@@ -180,6 +187,23 @@ export const PostsService = {
                 }
             }
 
+            let permissions: string[] = [];
+
+            if (postData.circleId && postData.privacy === 'private') {
+                try {
+                    const circleDoc = await databases.getDocument(
+                        DATABASE_ID,
+                        COLLECTIONS.CIRCLES,
+                        postData.circleId
+                    );
+                    if (circleDoc.teamId) {
+                        permissions = [Permission.read(Role.team(circleDoc.teamId))];
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch circle for post permissions", e);
+                }
+            }
+
             const payload = {
                 userId: authUser.$id,
                 type: postData.type || 'none',
@@ -196,6 +220,7 @@ export const PostsService = {
                 timestamp: new Date().toISOString(),
                 createdAt: new Date().toISOString(),
                 privacy: postData.privacy || 'public',
+                circleId: postData.circleId,
                 image: uploadedImageUrl,
                 mediaUrls: uploadedImageUrl ? [uploadedImageUrl] : [], 
                 likesCount: 0,
@@ -210,7 +235,8 @@ export const PostsService = {
                 DATABASE_ID,
                 COLLECTIONS.POSTS,
                 ID.unique(),
-                payload
+                payload,
+                permissions.length > 0 ? permissions : undefined
             );
         } catch (error) {
             console.error('Error creating post:', error);

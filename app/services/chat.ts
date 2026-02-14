@@ -104,7 +104,7 @@ export const ChatService = {
                 content,
                 type,
                 user_name: userName,
-                user_avatar: userAvatar,
+                user_avatar: userAvatar || undefined,
                 createdAt: new Date().toISOString()
             };
 
@@ -112,10 +112,18 @@ export const ChatService = {
 
             if (circleId) {
                 data.circleId = circleId;
-                // Circle messages usually readable by anyone or circle members. 
-                // For now assuming public circles or handle permissions elsewhere?
-                // If private circle, we should probably set permissions. 
-                // But for DMs (below), permissions are critical.
+                try {
+                    const circleDoc = await databases.getDocument(
+                        DATABASE_ID,
+                        COLLECTIONS.CIRCLES,
+                        circleId
+                    );
+                    if (circleDoc.teamId) {
+                        permissions = [Permission.read(Role.team(circleDoc.teamId))];
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch circle for permissions", e);
+                }
             }
 
             if (receiverId) {
