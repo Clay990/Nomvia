@@ -7,6 +7,7 @@ const { DATABASE_ID, COLLECTIONS } = APPWRITE_CONFIG;
 
 export interface BuilderItem {
     id: string;
+    ownerId?: string;
     type: 'helper' | 'pro' | 'part' | 'service' | 'job';
     name: string; 
     desc: string; 

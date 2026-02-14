@@ -70,7 +70,7 @@ export default function SignupScreen() {
       });
     } catch (error: any) {
       const isConflict = 
-        error.code == 409 || 
+        error.code === 409 || 
         (error.message && error.message.toLowerCase().includes("user with the same id")) ||
         (error.message && error.message.includes("processing your request")); 
       
