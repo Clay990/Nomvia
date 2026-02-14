@@ -22,6 +22,7 @@ import { Post, Comment } from '../../app/types';
 import CommentItem from '../../components/CommentItem';
 import { useAuth } from '../../context/AuthContext';
 import * as Haptics from 'expo-haptics';
+import Toast from 'react-native-toast-message';
 
 export default function PostDetailScreen() {
     const { id } = useLocalSearchParams();
@@ -50,7 +51,7 @@ export default function PostDetailScreen() {
             setPost(postData);
             setComments(commentsData.comments);
         } catch (error) {
-            Alert.alert("Error", "Failed to load post.");
+            Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to load post.' });
             router.back();
         } finally {
             setLoading(false);
@@ -67,7 +68,7 @@ export default function PostDetailScreen() {
             setComments(prev => [...prev, newComment]);
             setCommentText('');
         } catch (error) {
-            Alert.alert("Error", "Could not post comment.");
+            Toast.show({ type: 'error', text1: 'Error', text2: 'Could not post comment.' });
         } finally {
             setSending(false);
         }
@@ -84,7 +85,7 @@ export default function PostDetailScreen() {
                         await CommentsService.deleteComment(commentId, id as string);
                         setComments(prev => prev.filter(c => c.$id !== commentId));
                     } catch (e) {
-                        Alert.alert("Error", "Failed to delete.");
+                        Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to delete.' });
                     }
                 } 
             }

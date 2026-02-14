@@ -7,7 +7,6 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   TouchableWithoutFeedback,
   Keyboard,
   ActivityIndicator
@@ -18,6 +17,7 @@ import { ID } from "react-native-appwrite";
 import * as SecureStore from 'expo-secure-store';
 import { account } from "../lib/appwrite";
 import { useAuth } from "../context/AuthContext";
+import Toast from 'react-native-toast-message';
 
 export default function VerifyScreen() {
   const router = useRouter();
@@ -29,7 +29,7 @@ export default function VerifyScreen() {
 
   const handleVerify = async () => {
     if (!otp || otp.length < 6) {
-      Alert.alert("Invalid Code", "Please enter the 6-digit code sent to your email.");
+      Toast.show({ type: 'error', text1: 'Invalid Code', text2: 'Please enter the 6-digit code sent to your email.' });
       return;
     }
 
@@ -42,11 +42,11 @@ export default function VerifyScreen() {
 
       await SecureStore.setItemAsync('session_active', 'true');
 
-      Alert.alert("Success", "Email verified! Welcome to Nomvia.");
+      Toast.show({ type: 'success', text1: 'Success', text2: 'Email verified! Welcome to Nomvia.' });
       await checkAuth();
     } catch (error) {
       console.error(error);
-      Alert.alert("Verification Failed", "Invalid code or expired. Please try again.");
+      Toast.show({ type: 'error', text1: 'Verification Failed', text2: 'Invalid code or expired. Please try again.' });
     } finally {
       setIsSubmitting(false);
     }
@@ -56,9 +56,9 @@ export default function VerifyScreen() {
     try {
       const emailStr = Array.isArray(email) ? email[0] : email;
       await account.createEmailToken(ID.unique(), emailStr);
-      Alert.alert("Code Sent", `A new code has been sent to ${emailStr}`);
+      Toast.show({ type: 'info', text1: 'Code Sent', text2: `A new code has been sent to ${emailStr}` });
     } catch (error) {
-      Alert.alert("Error", "Could not resend code. Please try again later.");
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Could not resend code. Please try again later.' });
     }
   };
 

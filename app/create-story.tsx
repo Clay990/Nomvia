@@ -4,11 +4,12 @@ import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useState, useEffect } from 'react';
-import { ActivityIndicator, Alert, Dimensions, Image, ImageBackground, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Image, ImageBackground, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StoriesService } from './services/stories';
 import { events } from './utils/events';
 import { LinearGradient } from 'expo-linear-gradient';
+import Toast from 'react-native-toast-message';
 
 const { width, height } = Dimensions.get('window');
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
@@ -25,7 +26,7 @@ export default function CreateStoryScreen() {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert("Permission Denied", "Gallery access is needed.");
+        Toast.show({ type: 'error', text1: 'Permission Denied', text2: 'Gallery access is needed.' });
         return;
       }
 
@@ -39,7 +40,7 @@ export default function CreateStoryScreen() {
         const asset = result.assets[0];
         
         if (asset.fileSize && asset.fileSize > MAX_FILE_SIZE) {
-            Alert.alert("File Too Large", "Please choose a file smaller than 50MB.");
+            Toast.show({ type: 'error', text1: 'File Too Large', text2: 'Please choose a file smaller than 50MB.' });
             return;
         }
 
@@ -48,7 +49,7 @@ export default function CreateStoryScreen() {
         if (asset.duration) setDuration(asset.duration);
       }
     } catch (error: any) {
-      Alert.alert("Error", "Could not select media.");
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Could not select media.' });
     }
   };
 
@@ -61,7 +62,7 @@ export default function CreateStoryScreen() {
       events.emit('story_created');
       router.back();
     } catch (error) {
-      Alert.alert("Upload Failed", "Please try again.");
+      Toast.show({ type: 'error', text1: 'Upload Failed', text2: 'Please try again.' });
     } finally {
       setIsUploading(false);
     }

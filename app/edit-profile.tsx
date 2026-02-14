@@ -20,6 +20,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { account, databases, storage, APPWRITE_DB_ID, APPWRITE_COLLECTION_USERS, APPWRITE_BUCKET_ID } from "../lib/appwrite";
 import { ID } from "react-native-appwrite";
 import { useTheme } from "../context/ThemeContext";
+import Toast from 'react-native-toast-message';
 
 const ROLES = ["Nomad", "Builder", "Explorer", "Weekend Warrior"];
 const PACES = ["Fast", "Steady", "Slow"];
@@ -90,7 +91,7 @@ export default function EditProfileScreen() {
       });
     } catch (error) {
       console.error("Error loading profile:", error);
-      Alert.alert("Error", "Failed to load profile data");
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to load profile data' });
     } finally {
       setLoading(false);
     }
@@ -165,11 +166,11 @@ export default function EditProfileScreen() {
             }
         );
         
-        Alert.alert("Success", "Profile updated!");
+        Toast.show({ type: 'success', text1: 'Success', text2: 'Profile updated!' });
         router.back();
     } catch (error: any) {
         console.error("Save error:", error);
-        Alert.alert("Error", "Failed to update profile");
+        Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to update profile' });
     } finally {
         setSaving(false);
     }

@@ -10,15 +10,20 @@ export interface CategoryStat {
 
 export const CategoryStatsService = {
     calculateStats(items: BuilderItem[], categories: any[]): CategoryStat[] {
-        return categories.map(cat => {
+        const KEYWORD_MAP: { [key: string]: string[] } = {
+            "Mechanics": ["mechanic", "engine", "repair", "automotive"],
+            "Electricians": ["electrician", "electrical", "wiring"],
+            "Carpenters": ["carpenter", "wood", "cabinet", "furniture"],
+            "Solar Techs": ["solar", "panel", "energy", "inverter"],
+            "Towing": ["towing", "tow", "recovery"],
+        };
 
+        return categories.map(cat => {
+            const keywords = KEYWORD_MAP[cat.label] || [cat.label.toLowerCase().replace(/s$/, '')];
             
             const categoryItems = items.filter(item => {
-                const label = cat.label.toLowerCase().replace(/s$/, ''); 
-                const itemDesc = item.desc?.toLowerCase() || '';
-                const itemName = item.name?.toLowerCase() || '';
-                
-                return itemDesc.includes(label) || itemName.includes(label);
+                const text = `${item.name} ${item.desc} ${item.skills?.join(' ')}`.toLowerCase();
+                return keywords.some(k => text.includes(k));
             });
 
             const count = categoryItems.length;
@@ -33,7 +38,7 @@ export const CategoryStatsService = {
                 }
             });
 
-            const distDisplay = closestDist === Infinity ? 'None' : `${closestDist.toFixed(1)} km`;
+            const distDisplay = closestDist === Infinity ? '...' : `${closestDist.toFixed(1)} km`;
 
             return {
                 ...cat,

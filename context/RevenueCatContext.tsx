@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Platform, Alert } from 'react-native';
+import { Platform } from 'react-native';
 import Purchases, { CustomerInfo, PurchasesPackage } from 'react-native-purchases';
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
+import * as Sentry from '@sentry/react-native';
+import Toast from 'react-native-toast-message';
 
-// API Keys - In a real app, these should be in environment variables
 const API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY || '';
 
 const ENTITLEMENT_ID = 'Nomvia Pro';
@@ -45,15 +46,22 @@ export function RevenueCatProvider({ children }: { children: React.ReactNode }) 
       try {
         const offerings = await Purchases.getOfferings();
         const offering = offerings.all['nomvia'] || offerings.current;
+        
+        if (!offering) {
+             Sentry.captureMessage("RevenueCat: No Offerings Found in Production", "warning");
+        }
+
         if (offering && offering.availablePackages.length > 0) {
           setCurrentOffering(offering.availablePackages);
         }
       } catch (e) {
         console.error("Error fetching offerings", e);
+        Sentry.captureException(e, { tags: { section: "revenuecat_fetch_error" } });
       }
 
     } catch (e) {
       console.warn("RevenueCat init error: Native module might be missing. If you are in Expo Go, this is expected. You need a Development Build for RevenueCat.", e);
+      Sentry.captureException(e, { tags: { section: "revenuecat_init_error" } });
     }
   };
 
@@ -67,7 +75,11 @@ export function RevenueCatProvider({ children }: { children: React.ReactNode }) 
 
   const restorePurchases = async () => {
     if (!isInitialized) {
-        Alert.alert("Not Available", "Billing is not initialized. Please ensure you are running a Development Build.");
+        Toast.show({
+            type: 'error',
+            text1: 'Not Available',
+            text2: 'Billing is not initialized. Please ensure you are running a Development Build.'
+        });
         return;
     }
     try {
@@ -75,18 +87,35 @@ export function RevenueCatProvider({ children }: { children: React.ReactNode }) 
       setCustomerInfo(info);
       checkEntitlements(info);
       if (typeof info.entitlements.active[ENTITLEMENT_ID] !== "undefined") {
-        Alert.alert("Success", "Your purchases have been restored.");
+        Toast.show({
+            type: 'success',
+            text1: 'Success',
+            text2: 'Your purchases have been restored.'
+        });
       } else {
-        Alert.alert("Notice", "No active subscriptions found to restore.");
+        Toast.show({
+            type: 'info',
+            text1: 'Notice',
+            text2: 'No active subscriptions found to restore.'
+        });
       }
     } catch (e: any) {
-      Alert.alert("Error", e.message);
+      Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: e.message
+      });
+      Sentry.captureException(e, { tags: { section: "revenuecat_restore_error" } });
     }
   };
 
   const presentPaywall = async (): Promise<boolean> => {
     if (!isInitialized) {
-        Alert.alert("Not Available", "Billing is not initialized. Please ensure you are running a Development Build.");
+        Toast.show({
+            type: 'error',
+            text1: 'Not Available',
+            text2: 'Billing is not initialized. Please ensure you are running a Development Build.'
+        });
         return false;
     }
     try {
@@ -107,19 +136,25 @@ export function RevenueCatProvider({ children }: { children: React.ReactNode }) 
       return false;
     } catch (e) {
       console.error("Paywall error", e);
+      Sentry.captureException(e, { tags: { section: "revenuecat_paywall_error" } });
       return false;
     }
   };
 
   const presentCustomerCenter = async () => {
       if (!isInitialized) {
-          Alert.alert("Not Available", "Billing is not initialized. Please ensure you are running a Development Build.");
+          Toast.show({
+              type: 'error',
+              text1: 'Not Available',
+              text2: 'Billing is not initialized. Please ensure you are running a Development Build.'
+          });
           return;
       }
       try {
           await RevenueCatUI.presentCustomerCenter();
       } catch(e) {
           console.error("Error presenting customer center", e);
+          Sentry.captureException(e, { tags: { section: "revenuecat_customer_center_error" } });
       }
   }
 

@@ -7,6 +7,7 @@ import { PostsService } from "../../app/services/posts";
 import { useTheme } from "../../context/ThemeContext";
 import PostCard from "../../components/PostCard";
 import { Post } from "../../app/types";
+import Toast from 'react-native-toast-message';
 
 export default function CircleDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -32,7 +33,7 @@ export default function CircleDetailScreen() {
               }
           } catch (error) {
               console.error(error);
-              Alert.alert("Error", "Failed to load circle details");
+              Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to load circle details' });
               router.back();
           } finally {
               setLoading(false);

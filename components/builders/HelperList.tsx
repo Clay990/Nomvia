@@ -4,7 +4,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import SafetyBanner from './SafetyBanner';
 
 interface Helper {
-  id: number;
+  id: string;
   name: string;
   skill: string;
   dist: string;

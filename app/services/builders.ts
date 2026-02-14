@@ -25,6 +25,7 @@ export interface BuilderItem {
     reviewCount?: number;
     hourlyRate?: string;
     isMock?: boolean;
+    skills?: string[];
 }
 
 export const BuildersService = {
@@ -56,47 +57,83 @@ export const BuildersService = {
     },
 
     async fetchRealWorldServices(lat: number, lon: number, category: string): Promise<BuilderItem[]> {
-        const radius = 50000;
-        let osmTag = '';
+        console.log(`[OSM] Fetching services around Lat: ${lat}, Lon: ${lon} for category: ${category}`);
 
-        if (category === 'Mechanics') osmTag = '["shop"~"car_repair|motorcycle_repair"]';
-        else if (category === 'Electricians') osmTag = '["craft"="electrician"]'; 
-        else if (category === 'Parts') osmTag = '["shop"~"hardware|car_parts|doityourself"]';
-        else if (category === 'Towing') osmTag = '["service"="vehicle:towing"]'; 
-        else if (category === 'Solar') osmTag = '["shop"~"electronics|solar"]'; 
-        else osmTag = '["shop"~"car_repair|hardware|car_parts|outdoor|camping"]';
+        if (!lat || !lon || isNaN(lat) || isNaN(lon)) {
+            console.log("Invalid coordinates for OSM fetch");
+            return [];
+        }
+
+        const radius = 50000;
+        let queryBody = '';
+
+        if (category === 'Mechanics') {
+            queryBody = `node(around:${radius},${lat},${lon})["shop"~"car_repair|motorcycle_repair"];`;
+        } else if (category === 'Electricians') {
+            queryBody = `node(around:${radius},${lat},${lon})["craft"="electrician"];`;
+        } else if (category === 'Parts') {
+            queryBody = `node(around:${radius},${lat},${lon})["shop"~"hardware|car_parts|doityourself"];`;
+        } else if (category === 'Towing') {
+            queryBody = `node(around:${radius},${lat},${lon})["service"="vehicle:towing"];`;
+        } else if (category === 'Solar') {
+            queryBody = `node(around:${radius},${lat},${lon})["shop"~"electronics|solar"];`;
+        } else {
+            queryBody = `
+                node(around:${radius},${lat},${lon})["shop"~"car_repair|hardware|car_parts|outdoor|camping|electronics|solar"];
+                node(around:${radius},${lat},${lon})["craft"~"electrician|carpenter"];
+                node(around:${radius},${lat},${lon})["service"="vehicle:towing"];
+            `;
+        }
 
         const query = `
             [out:json][timeout:25];
             (
-              node(around:${radius},${lat},${lon})${osmTag};
+              ${queryBody}
             );
-            out body 10;
+            out body;
         `;
+        
+        console.log("OSM Query:", query);
 
         try {
-            const response = await fetch('https://overpass-api.de/api/interpreter', {
+            const response = await fetch('https://maps.mail.ru/osm/tools/overpass/api/interpreter', {
                 method: 'POST',
-                body: query
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Referer': 'https://nomvia.app'
+                },
+                body: `data=${encodeURIComponent(query)}`
             });
-            const data = await response.json();
-            if (!data.elements) return [];
 
-            return data.elements.map((el: any) => {
-                const dist = BuildersService.calculateDistance(lat, lon, el.lat, el.lon).toFixed(1);
-                const desc = el.tags['shop'] ? el.tags['shop'].replace('_', ' ') : (el.tags['craft'] || 'Service');
-                
-                return {
-                    id: `osm_${el.id}`,
-                    type: 'service',
-                    name: el.tags.name || 'Local Service',
-                    desc: desc,
-                    dist: `${dist} km`,
-                    verified: false,
-                    coordinate: { latitude: el.lat, longitude: el.lon },
-                    image: BuildersService.getServiceImage(category || desc) 
-                };
-            });
+            const text = await response.text();
+            
+            if (!text.trim().startsWith('{')) {
+                console.log("OSM Raw Response (First 500 chars):", text.substring(0, 500));
+            }
+
+            try {
+                const data = JSON.parse(text);
+                if (!data.elements) return [];
+
+                return data.elements.slice(0, 20).map((el: any) => {
+                    const dist = BuildersService.calculateDistance(lat, lon, el.lat, el.lon).toFixed(1);
+                    const desc = el.tags['shop'] ? el.tags['shop'].replace('_', ' ') : (el.tags['craft'] || 'Service');
+                    
+                    return {
+                        id: `osm_${el.id}`,
+                        type: 'service',
+                        name: el.tags.name || 'Local Service',
+                        desc: desc,
+                        dist: `${dist} km`,
+                        verified: false,
+                        coordinate: { latitude: el.lat, longitude: el.lon },
+                        image: BuildersService.getServiceImage(category || desc) 
+                    };
+                });
+            } catch (jsonError) {
+                console.log("OSM JSON Parse Error. Response:", text.substring(0, 200));
+                return [];
+            }
         } catch (error) {
             console.log("OSM Builders Fetch Error", error);
             return [];
@@ -138,7 +175,8 @@ export const BuildersService = {
                         verified: doc.verified || false,
                         coordinate: { latitude: doc.latitude, longitude: doc.longitude },
                         rating: doc.rating || 4.5,
-                        hourlyRate: doc.hourlyRate || '$25/hr'
+                        hourlyRate: doc.hourlyRate || '$25/hr',
+                        skills: doc.skills || []
                     });
                 }
             });
@@ -173,7 +211,7 @@ export const BuildersService = {
                 ]
             );
 
-            return response.documents.map((doc: any) => {
+            const jobs = response.documents.map((doc: any) => {
                 const dist = BuildersService.calculateDistance(lat, lon, doc.latitude, doc.longitude).toFixed(1);
                 
                 // Only return jobs within 100km (or whatever meaningful radius)
@@ -181,6 +219,7 @@ export const BuildersService = {
 
                 return {
                     id: doc.$id,
+                    ownerId: doc.userId,
                     type: 'job',
                     name: doc.title, 
                     desc: doc.description,
@@ -195,10 +234,37 @@ export const BuildersService = {
                 };
             }).filter(Boolean) as BuilderItem[];
 
+            if (jobs.length > 0) return jobs;
+            
+            return BuildersService.getMockJobs(lat, lon);
+
         } catch (error) {
             console.error("Error fetching open jobs", error);
-            return [];
+            return BuildersService.getMockJobs(lat, lon);
         }
+    },
+
+    getMockJobs(lat: number, lon: number): BuilderItem[] {
+        return [
+            {
+                id: 'j1', ownerId: 'mock_user_1', type: 'job', name: 'Stuck in Mud', desc: 'Need a tow out of a muddy campsite near the river.', dist: '5.2 km',
+                image: 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=400',
+                urgency: 'critical', offer: '$150',
+                coordinate: { latitude: lat + 0.02, longitude: lon + 0.02 }
+            },
+            {
+                id: 'j2', ownerId: 'mock_user_2', type: 'job', name: 'Solar Install Help', desc: 'Need an extra pair of hands to lift panels onto roof.', dist: '12 km',
+                image: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?q=80&w=400',
+                urgency: 'high', offer: '$50/hr',
+                coordinate: { latitude: lat - 0.03, longitude: lon - 0.01 }
+            },
+            {
+                id: 'j3', ownerId: 'mock_user_3', type: 'job', name: 'Leaking Roof Vent', desc: 'Rain coming in through MaxxAir fan, need sealant help.', dist: '8.5 km',
+                image: 'https://images.unsplash.com/photo-1595814433015-e6f5ce69614e?q=80&w=400',
+                urgency: 'low', offer: 'Dinner & Beer',
+                coordinate: { latitude: lat + 0.01, longitude: lon - 0.04 }
+            }
+        ];
     },
 
     getMockData(category: string, lat: number, lon: number): BuilderItem[] {

@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -18,6 +17,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useLocation } from '../context/LocationContext';
 import { databases, account } from '../lib/appwrite';
 import { APPWRITE_CONFIG } from './config/appwrite-schema';
+import Toast from 'react-native-toast-message';
 
 const CATEGORIES = [
   { id: 'mechanic', label: 'Mechanic', icon: 'wrench' },
@@ -48,12 +48,12 @@ export default function RequestServiceScreen() {
 
   const handleSubmit = async () => {
     if (!description.trim()) {
-      Alert.alert("Missing Information", "Please describe your issue.");
+      Toast.show({ type: 'error', text1: 'Missing Information', text2: 'Please describe your issue.' });
       return;
     }
 
     if (!location) {
-        Alert.alert("Location Required", "We need your location to find helpers nearby.");
+        Toast.show({ type: 'error', text1: 'Location Required', text2: 'We need your location to find helpers nearby.' });
         return;
     }
 
@@ -81,13 +81,17 @@ export default function RequestServiceScreen() {
             payload
         );
 
-        Alert.alert("Request Posted", "Help is on the way! Nearby helpers have been notified.", [
-            { text: "OK", onPress: () => router.back() }
-        ]);
+        Toast.show({
+            type: 'success',
+            text1: 'Request Posted',
+            text2: 'Help is on the way! Nearby helpers have been notified.',
+            onHide: () => router.back()
+        });
+        setTimeout(() => router.back(), 2000);
 
     } catch (error: any) {
         console.error("Failed to post request", error);
-        Alert.alert("Error", "Could not post request. Please try again.");
+        Toast.show({ type: 'error', text1: 'Error', text2: 'Could not post request. Please try again.' });
     } finally {
         setIsSubmitting(false);
     }

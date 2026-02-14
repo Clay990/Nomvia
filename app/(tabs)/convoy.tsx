@@ -7,6 +7,7 @@ import {
   FlatList,
   ActivityIndicator,
   RefreshControl,
+  Alert
 } from "react-native";
 import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -26,7 +27,7 @@ import { useAuth } from "../../context/AuthContext";
 import FeedHeader from "../../components/convoy/FeedHeader";
 import AnimatedHeader from "../../components/convoy/AnimatedHeader";
 import PostOptionsModal from "../../components/PostOptionsModal";
-import { Alert } from "react-native";
+import Toast from 'react-native-toast-message';
 
 export default function ConvoyScreen() {
   const router = useRouter();
@@ -160,7 +161,7 @@ export default function ConvoyScreen() {
                               await PostsService.deletePost(selectedPostId);
                               setPosts(prev => prev.filter(p => p.$id !== selectedPostId));
                           } catch (e) {
-                              Alert.alert("Error", "Failed to delete post.");
+                              Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to delete post.' });
                           }
                       }
                   }
@@ -168,8 +169,8 @@ export default function ConvoyScreen() {
           );
       } else {
           setTimeout(() => {
-              if (option === 'report') Alert.alert("Reported", "Thanks for keeping the convoy safe.");
-              if (option === 'block') Alert.alert("Blocked", "You won't see posts from this user.");
+              if (option === 'report') Toast.show({ type: 'success', text1: 'Reported', text2: 'Thanks for keeping the convoy safe.' });
+              if (option === 'block') Toast.show({ type: 'info', text1: 'Blocked', text2: "You won't see posts from this user." });
           }, 500);
       }
   };

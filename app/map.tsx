@@ -1,13 +1,14 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
-import { StatusBar, StyleSheet, Switch, Text, TouchableOpacity, View, Alert, ScrollView } from "react-native";
+import { StatusBar, StyleSheet, Switch, Text, TouchableOpacity, View, ScrollView } from "react-native";
 import { WebView } from "react-native-webview";
 import * as Location from 'expo-location';
 import { MapService, MapItem } from "./services/map";
 import WeatherWidget from "../components/WeatherWidget";
 import { CURRENT_USER_LOCATION } from "./utils/location";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Toast from 'react-native-toast-message';
 
 const htmlContent = `
 <!DOCTYPE html>
@@ -228,7 +229,7 @@ export default function MapScreen() {
       const startTracking = async () => {
           const { status } = await Location.requestForegroundPermissionsAsync();
           if (status !== 'granted') {
-              Alert.alert('Permission denied', 'Allow location access to share your live position.');
+              Toast.show({ type: 'error', text1: 'Permission denied', text2: 'Allow location access to share your live position.' });
               setIsSharing(false);
               return;
           }

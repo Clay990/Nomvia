@@ -27,6 +27,7 @@ import { useTheme } from '../context/ThemeContext';
 import { PostsService } from './services/posts';
 import { Post } from './types';
 import { events } from './utils/events';
+import Toast from 'react-native-toast-message';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -66,28 +67,6 @@ const useDebounce = (value: any, delay: number) => {
   return debouncedValue;
 };
 
-const Toast = ({ message, visible, onDismiss }: { message: string, visible: boolean, onDismiss: () => void }) => {
-    const fadeAnim = useRef(new Animated.Value(0)).current;
-
-    useEffect(() => {
-        if (visible) {
-            Animated.sequence([
-                Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
-                Animated.delay(2000),
-                Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true })
-            ]).start(() => onDismiss());
-        }
-    }, [visible]);
-
-    if (!visible) return null;
-
-    return (
-        <Animated.View style={[styles.toast, { opacity: fadeAnim }]}>
-            <Text style={styles.toastText}>{message}</Text>
-        </Animated.View>
-    );
-};
-
 export default function CreatePostScreen() {
   const router = useRouter();
   const { colors: themeColors, isDark: isSystemDark } = useTheme();
@@ -116,8 +95,6 @@ export default function CreatePostScreen() {
   const [showInstructions, setShowInstructions] = useState(true);
   const [imageLoading, setImageLoading] = useState(false);
   
-  const [toastMsg, setToastMsg] = useState('');
-  const [showToast, setShowToast] = useState(false);
   const [lastState, setLastState] = useState<any>(null);
 
   const [showTagSuggestions, setShowTagSuggestions] = useState(false);
@@ -143,11 +120,6 @@ export default function CreatePostScreen() {
   useEffect(() => {
      if (Object.keys(touched).length > 0) validate(false);
   }, [content, locationFrom, locationTo, touched]);
-
-  const showNotification = (msg: string) => {
-      setToastMsg(msg);
-      setShowToast(true);
-  };
 
   const loadUserProfile = async () => {
       try {
@@ -179,7 +151,7 @@ export default function CreatePostScreen() {
         setIsSensitive(data.isSensitive || false);
         
         if (data.content || data.locationFrom) {
-             showNotification("Draft restored");
+            Toast.show({ type: 'info', text1: 'Draft restored' });
         }
       }
     } catch (e) {
@@ -228,7 +200,7 @@ export default function CreatePostScreen() {
 
   const handleVoiceInput = () => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      Alert.alert("Voice Input", "Please use the microphone button on your keyboard.");
+      Toast.show({ type: 'info', text1: 'Voice Input', text2: 'Please use the microphone button on your keyboard.' });
       contentInputRef.current?.focus();
   };
 
@@ -261,7 +233,7 @@ export default function CreatePostScreen() {
             AccessibilityInfo.announceForAccessibility("Image selected successfully");
         }, 500);
       }
-    } catch (e) { Alert.alert("Error", "Could not pick image."); }
+    } catch (e) { Toast.show({ type: 'error', text1: 'Error', text2: 'Could not pick image.' }); }
   };
 
   const validate = (updateState = true): boolean => {
@@ -286,9 +258,9 @@ export default function CreatePostScreen() {
   const handleSave = async () => {
     if (isSubmitting) return;
     setTouched({ content: true, from: true, to: true });
-    if (!validate()) { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error); Alert.alert("Incomplete Post", "Check errors."); return; }
-    if (PROFANITY_LIST.some(word => content.toLowerCase().includes(word))) { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error); Alert.alert("Content Warning", "Inappropriate language."); return; }
-    if (await checkForDuplicates()) { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); Alert.alert("Duplicate Post", "Already posted."); return; }
+    if (!validate()) { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error); Toast.show({ type: 'error', text1: 'Incomplete Post', text2: 'Check errors.' }); return; }
+    if (PROFANITY_LIST.some(word => content.toLowerCase().includes(word))) { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error); Toast.show({ type: 'error', text1: 'Content Warning', text2: 'Inappropriate language.' }); return; }
+    if (await checkForDuplicates()) { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); Toast.show({ type: 'info', text1: 'Duplicate Post', text2: 'Already posted.' }); return; }
 
     setIsSubmitting(true);
     
@@ -317,7 +289,7 @@ export default function CreatePostScreen() {
         
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         
-        showNotification(isScheduled ? "Post scheduled!" : "Published successfully!");
+        Toast.show({ type: 'success', text1: isScheduled ? "Post scheduled!" : "Published successfully!" });
         setTimeout(() => {
             router.back();
         }, 1500);
@@ -325,7 +297,7 @@ export default function CreatePostScreen() {
     } catch (e) {
         setIsSubmitting(false);
         console.error(e);
-        Alert.alert("Error", "Failed to post. Please try again.");
+        Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to post. Please try again.' });
     }
   };
 
@@ -416,8 +388,6 @@ export default function CreatePostScreen() {
           headerShadowVisible: false,
         }}
       />
-
-      <Toast message={toastMsg} visible={showToast} onDismiss={() => setShowToast(false)} />
 
       <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
@@ -519,7 +489,7 @@ export default function CreatePostScreen() {
               <View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <Text style={[styles.toggleTitle, textStyle]}>Live Journey Tracking</Text>
-                     <TouchableOpacity onPress={() => Alert.alert("Live Tracking", "Enable this to show a progress bar.")}><MaterialCommunityIcons name="information-outline" size={16} color={themeColors.subtext} /></TouchableOpacity>
+                     <TouchableOpacity onPress={() => Toast.show({ type: 'info', text1: 'Live Tracking', text2: 'Enable this to show a progress bar.' })}><MaterialCommunityIcons name="information-outline" size={16} color={themeColors.subtext} /></TouchableOpacity>
                 </View>
                 <Text style={{ color: themeColors.subtext, fontSize: 12 }}>Show progress bar on feed</Text>
               </View>
@@ -580,7 +550,7 @@ export default function CreatePostScreen() {
                  <View style={[styles.section, cardStyle, { padding: 12 }]}>
                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                          <Text style={{ color: themeColors.text }}>Date & Time</Text>
-                         <TouchableOpacity onPress={() => Alert.alert("Date Picker", "Mock Picker")} style={{ backgroundColor: themeColors.border, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 }}><Text style={{ color: themeColors.text, fontWeight: '600' }}>Tomorrow, 9:00 AM</Text></TouchableOpacity>
+                         <TouchableOpacity onPress={() => Toast.show({ type: 'info', text1: 'Date Picker', text2: 'Mock Picker' })} style={{ backgroundColor: themeColors.border, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 }}><Text style={{ color: themeColors.text, fontWeight: '600' }}>Tomorrow, 9:00 AM</Text></TouchableOpacity>
                      </View>
                      
                      

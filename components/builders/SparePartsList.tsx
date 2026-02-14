@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 interface SparePart {
-  id: number;
+  id: string;
   item: string;
   price: string;
   dist: string;

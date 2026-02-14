@@ -21,6 +21,7 @@ import { useNetwork } from "../../context/NetworkContext";
 import { CacheService } from "../utils/cache";
 import { BuildersService, BuilderItem } from "../services/builders";
 import { CategoryStatsService, CategoryStat } from "../services/category-stats";
+import Toast from 'react-native-toast-message';
 
 import CategoryList from "../../components/builders/CategoryList";
 import HelperList from "../../components/builders/HelperList";
@@ -115,6 +116,7 @@ export default function BuildersScreen() {
   const [categories, setCategories] = useState<CategoryStat[]>(INITIAL_CATEGORIES);
   const [sortBy, setSortBy] = useState<'distance' | 'rating' | 'price'>('distance');
   const [items, setItems] = useState<BuilderItem[]>([]);
+  const [allItems, setAllItems] = useState<BuilderItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<'helpers' | 'jobs'>('helpers');
   
@@ -146,16 +148,18 @@ export default function BuildersScreen() {
   const fetchData = useCallback(async () => {
       setLoading(true);
       try {
-          const cacheKey = `builders_${mode}_${activeFilter}`;
+          const cacheKey = `builders_${mode}_all`;
           
           const cached = await CacheService.getData(cacheKey);
           if (cached) {
-              setItems(cached);
+              setAllItems(cached);
               setLoading(false); 
               
               if (mode === 'helpers') {
                   const updatedCategories = CategoryStatsService.calculateStats(cached, INITIAL_CATEGORIES);
                   setCategories(updatedCategories);
+              } else {
+                  setItems(cached); 
               }
           }
 
@@ -168,9 +172,9 @@ export default function BuildersScreen() {
             const data = await BuildersService.getBuildersAndHelpers(
                 location?.coords.latitude, 
                 location?.coords.longitude, 
-                activeFilter
+                'All'
             );
-            setItems(data);
+            setAllItems(data);
             
             const updatedCategories = CategoryStatsService.calculateStats(data, INITIAL_CATEGORIES);
             setCategories(updatedCategories);
@@ -181,7 +185,7 @@ export default function BuildersScreen() {
                 location?.coords.latitude || 0,
                 location?.coords.longitude || 0
             );
-            setItems(data);
+            setItems(data); 
             CacheService.saveData(cacheKey, data);
           }
       } catch (e) {
@@ -189,7 +193,33 @@ export default function BuildersScreen() {
       } finally {
           setLoading(false);
       }
-  }, [activeFilter, location, mode, isConnected]);
+  }, [location, mode, isConnected]);
+
+  const FILTER_MAP: { [key: string]: string[] } = {
+      "Mechanics": ["mechanic", "engine", "repair"],
+      "Electricians": ["electrician", "electrical", "wiring"],
+      "Carpenters": ["carpenter", "wood", "cabinet"],
+      "Solar": ["solar", "panel", "energy"],
+      "Solar Techs": ["solar", "panel", "energy"],
+      "Towing": ["towing", "tow"],
+      "Parts": ["part", "hardware", "spare"]
+  };
+
+  useEffect(() => {
+      if (mode === 'helpers') {
+          if (activeFilter === 'All') {
+              setItems(allItems);
+          } else {
+              const keywords = FILTER_MAP[activeFilter] || [activeFilter.toLowerCase()];
+              
+              const filtered = allItems.filter(item => {
+                  const itemString = `${item.name} ${item.desc} ${item.skills?.join(' ')}`.toLowerCase();
+                  return keywords.some(k => itemString.includes(k));
+              });
+              setItems(filtered);
+          }
+      }
+  }, [activeFilter, allItems, mode]);
 
   useEffect(() => {
       fetchData();
@@ -214,15 +244,17 @@ export default function BuildersScreen() {
           "This will open your messaging app with a pre-filled distress message containing your location.",
           [
               { text: "Cancel", style: "cancel" },
-              { text: "Open SMS", onPress: () => Linking.openURL(url).catch(() => Alert.alert("Error", "Could not open messaging app.")) }
+              { text: "Open SMS", onPress: () => Linking.openURL(url).catch(() => Toast.show({ type: 'error', text1: 'Error', text2: 'Could not open messaging app.' })) }
           ]
       );
   };
 
   const doesMatchSearch = (item: BuilderItem) => {
       const term = search.toLowerCase();
+      const skillsMatch = item.skills?.some(s => s.toLowerCase().includes(term));
       return item.name.toLowerCase().includes(term) || 
-             item.desc.toLowerCase().includes(term);
+             item.desc.toLowerCase().includes(term) ||
+             skillsMatch;
   };
 
   const sortItems = (itemsToSort: BuilderItem[]) => {
@@ -230,9 +262,14 @@ export default function BuildersScreen() {
           if (sortBy === 'rating') {
               return (b.rating || 0) - (a.rating || 0);
           } else if (sortBy === 'price') {
-         
-             const priceA = parseInt(a.price?.replace(/[^0-9]/g, '') || '0') || parseInt(a.hourlyRate?.replace(/[^0-9]/g, '') || '0');
-             const priceB = parseInt(b.price?.replace(/[^0-9]/g, '') || '0') || parseInt(b.hourlyRate?.replace(/[^0-9]/g, '') || '0');
+             const getPrice = (p?: string) => {
+                 if (!p) return 0;
+                 const match = p.match(/(\d+)/);
+                 return match ? parseInt(match[0], 10) : 0;
+             };
+             
+             const priceA = getPrice(a.price) || getPrice(a.hourlyRate);
+             const priceB = getPrice(b.price) || getPrice(b.hourlyRate);
              return priceA - priceB;
           } else {
              const distA = parseFloat(a.dist?.split(' ')[0] || '1000');
@@ -245,7 +282,7 @@ export default function BuildersScreen() {
   const filteredItems = sortItems(items.filter(doesMatchSearch));
 
   const handleBook = (id: string) => {
-      Alert.alert("Booking", "Feature coming soon! This will open a booking calendar.");
+      Toast.show({ type: 'info', text1: 'Booking', text2: 'Feature coming soon! This will open a booking calendar.' });
   };
   
   useEffect(() => {
@@ -265,7 +302,7 @@ export default function BuildersScreen() {
   }, [filteredItems, viewMode, mapReady, location]);
 
   const filteredHelpers = filteredItems.filter(i => i.type === 'helper').map(h => ({
-      id: h.id as any, 
+      id: h.id, 
       name: h.name,
       skill: h.desc,
       dist: h.dist || 'Nearby',
@@ -287,7 +324,7 @@ export default function BuildersScreen() {
   }));
 
   const filteredProBuilders = filteredItems.filter(i => i.type === 'pro').map(b => ({
-      id: b.id as any,
+      id: b.id,
       name: b.name,
       built: "10+ vans", 
       specialty: b.desc,
@@ -296,7 +333,7 @@ export default function BuildersScreen() {
   }));
 
   const filteredParts = filteredItems.filter(i => i.type === 'part').map(p => ({
-      id: p.id as any,
+      id: p.id,
       item: p.name,
       price: p.price || "Contact for price",
       dist: p.dist || 'Nearby',
@@ -304,7 +341,8 @@ export default function BuildersScreen() {
   }));
 
   const filteredJobs = filteredItems.filter(i => i.type === 'job').map(j => ({
-      id: j.id as any,
+      id: j.id,
+      ownerId: j.ownerId,
       name: j.name,
       desc: j.desc,
       dist: j.dist || 'Nearby',
@@ -371,7 +409,7 @@ export default function BuildersScreen() {
                     onPress={() => {
                         const nextSort = sortBy === 'distance' ? 'rating' : sortBy === 'rating' ? 'price' : 'distance';
                         setSortBy(nextSort);
-                        Alert.alert("Sorted by", nextSort.charAt(0).toUpperCase() + nextSort.slice(1));
+                        Toast.show({ type: 'info', text1: 'Sorted by', text2: nextSort.charAt(0).toUpperCase() + nextSort.slice(1) });
                     }}
                 >
                     <MaterialCommunityIcons name="sort" size={24} color={colors.text} />
@@ -418,6 +456,7 @@ export default function BuildersScreen() {
                         <CategoryList 
                             categories={categories} 
                             colors={colors} 
+                            activeCategory={activeFilter}
                             onCategorySelect={setActiveFilter}
                         />
                     )}
@@ -452,7 +491,11 @@ export default function BuildersScreen() {
                     )}
                 </>
             ) : (
-                <JobList jobs={filteredJobs} colors={colors} onChat={(id) => router.push(`/messages/${id}`)} />
+                <JobList 
+                    jobs={filteredJobs} 
+                    colors={colors} 
+                    onChat={(ownerId) => router.push(`/messages/${ownerId}`)} 
+                />
             )}
             
             {filteredItems.length === 0 && (
@@ -480,7 +523,7 @@ export default function BuildersScreen() {
                   <Text style={styles.mapFloatingText}>Showing {filteredItems.length} results in this area</Text>
               </View>
               
-              <TouchableOpacity style={styles.trackBtn} onPress={() => Alert.alert("Tracking", "Simulating real-time tracking of service provider...")}>
+              <TouchableOpacity style={styles.trackBtn} onPress={() => Toast.show({ type: 'info', text1: 'Tracking', text2: 'Simulating real-time tracking of service provider...' })}>
                   <MaterialCommunityIcons name="radar" size={24} color="#FFF" />
               </TouchableOpacity>
           </View>

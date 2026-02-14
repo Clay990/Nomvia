@@ -14,7 +14,6 @@ import {
   Alert,
   FlatList
 } from "react-native";
-import { Snackbar } from 'react-native-paper';
 import { PostsService } from '../services/posts';
 import { account } from '../../lib/appwrite';
 import { CirclesService } from '../services/circles';
@@ -26,6 +25,7 @@ import PostCard from '../../components/PostCard';
 import SkeletonPost from '../../components/SkeletonPost';
 import { events } from '../utils/events';
 import { useTheme } from '../../context/ThemeContext';
+import Toast from 'react-native-toast-message';
 
 const CATEGORIES = ['All', 'Meetups', 'Discussions', 'Wiki', 'Van Life', 'Help Needed', 'Convoy'];
 
@@ -45,14 +45,6 @@ export default function CommunityScreen() {
   const [category, setCategory] = useState('All');
   const [sortOption, setSortOption] = useState<'Latest' | 'Trending'>('Latest');
 
-  const [snackbarVisible, setSnackbarVisible] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-
-  const showToast = (msg: string) => {
-      setSnackbarMessage(msg);
-      setSnackbarVisible(true);
-  };
-
   const fetchAuxData = async () => {
       try {
           const [meetups, discussions, circles] = await Promise.all([
@@ -71,8 +63,8 @@ export default function CommunityScreen() {
   const fetchPosts = async () => {
     try {
       if (!refreshing) setLoading(true);
-      const { posts: newPosts } = await PostsService.getPosts({ 
-          feedType: sortOption === 'Trending' ? 'trending' : 'latest', 
+      const { posts: newPosts } = await PostsService.getPosts({
+          feedType: sortOption === 'Trending' ? 'trending' : 'latest',
           limit: 20,
           category: category
       });
@@ -130,16 +122,16 @@ export default function CommunityScreen() {
               "Are you sure you want to delete this post?",
               [
                   { text: "Cancel", style: "cancel" },
-                  { 
+                  {
                       text: "Delete", 
                       style: "destructive", 
                       onPress: async () => {
                           try {
                               await PostsService.deletePost(selectedPostId);
                               setPosts(prev => prev.filter(p => p.$id !== selectedPostId));
-                              showToast("Post deleted.");
+                              Toast.show({ type: 'success', text1: 'Post deleted.' });
                           } catch (e) {
-                              Alert.alert("Error", "Failed to delete post.");
+                              Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to delete post.' });
                           }
                       }
                   }
@@ -148,8 +140,8 @@ export default function CommunityScreen() {
       } else {
           setTimeout(() => {
               if (option === 'report') handleReport(selectedPostId);
-              if (option === 'block') Alert.alert("Blocked", "You won't see posts from this user.");
-              if (option === 'share') Alert.alert("Share", "Sharing feature coming soon.");
+              if (option === 'block') Toast.show({ type: 'info', text1: 'Blocked', text2: "You won't see posts from this user." });
+              if (option === 'share') Toast.show({ type: 'info', text1: 'Share', text2: 'Sharing feature coming soon.' });
           }, 500);
       }
   };
@@ -164,8 +156,8 @@ export default function CommunityScreen() {
           "Report Content", 
           "Why are you reporting this?",
           [
-              { text: "Spam", onPress: () => showToast("Reported. We will review this.") },
-              { text: "Inappropriate", onPress: () => showToast("Reported. We will review this.") },
+              { text: "Spam", onPress: () => Toast.show({ type: 'success', text1: 'Reported', text2: 'We will review this.' }) },
+              { text: "Inappropriate", onPress: () => Toast.show({ type: 'success', text1: 'Reported', text2: 'We will review this.' }) },
               { text: "Cancel", style: "cancel" }
           ]
       );
@@ -386,14 +378,6 @@ export default function CommunityScreen() {
             ) : null
         }
       />
-      <Snackbar
-        visible={snackbarVisible}
-        onDismiss={() => setSnackbarVisible(false)}
-        duration={3000}
-        style={{ backgroundColor: colors.text, marginBottom: 80 }} 
-      >
-        <Text style={{ color: colors.background, fontWeight: '600' }}>{snackbarMessage}</Text>
-      </Snackbar>
 
       <PostOptionsModal 
         visible={postOptionsVisible}

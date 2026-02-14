@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'rea
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 interface ProBuilder {
-  id: number;
+  id: string;
   name: string;
   built: string;
   specialty: string;

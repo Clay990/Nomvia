@@ -254,6 +254,22 @@ export const DatingService = {
     },
 
     async getUserProfile(userId: string): Promise<DatingProfile> {
+        if (userId.startsWith('mock_')) {
+            return {
+                $id: userId,
+                name: "Nomad Helper (Mock)",
+                age: 28,
+                verified: true,
+                location: "Nearby",
+                status: "Helping",
+                bio: "This is a demo profile for testing the chat functionality.",
+                image: "https://images.unsplash.com/photo-1542596594-649edbc13630?q=80&w=400",
+                vanImage: "https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?q=80&w=800",
+                tags: ["VanLife", "DIY"],
+                isMoving: true
+            };
+        }
+
         try {
             const doc = await databases.getDocument(
                 DATABASE_ID,

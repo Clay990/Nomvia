@@ -16,6 +16,7 @@ import { APPWRITE_CONFIG } from "./config/appwrite-schema";
 import { account, databases } from "../lib/appwrite";
 import { useTheme } from "../context/ThemeContext";
 import { format } from "date-fns";
+import Toast from 'react-native-toast-message';
 
 interface RequestItem {
     $id: string;
@@ -84,7 +85,7 @@ export default function MyRequestsScreen() {
                       
                       fetchRequests();
                   } catch (e) {
-                      Alert.alert("Error", "Could not update request.");
+                      Toast.show({ type: 'error', text1: 'Error', text2: 'Could not update request.' });
                   }
               }}
           ]

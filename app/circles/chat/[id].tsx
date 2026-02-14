@@ -19,6 +19,7 @@ import { CirclesService } from "../../../app/services/circles";
 import { useAuth } from "../../../context/AuthContext";
 import { Message } from "../../../app/types";
 import { useNetwork } from "../../../context/NetworkContext";
+import Toast from 'react-native-toast-message';
 
 export default function CircleChatScreen() {
   const router = useRouter();
@@ -82,7 +83,7 @@ export default function CircleChatScreen() {
     } catch (e) {
         console.error("Failed to send", e);
         setInputText(content);
-        alert("Failed to send message");
+        Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to send message' });
     }
   };
 

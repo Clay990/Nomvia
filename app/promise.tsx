@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuth } from "../context/AuthContext";
 import { account, databases, APPWRITE_DB_ID, APPWRITE_COLLECTION_USERS } from "../lib/appwrite";
+import Toast from 'react-native-toast-message';
 
 export default function PromiseScreen() {
   const router = useRouter();
@@ -25,7 +26,7 @@ export default function PromiseScreen() {
       await checkAuth();
     } catch (error) {
       console.error("Promise Error:", error);
-      Alert.alert("Error", "Could not complete setup. Please try again.");
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Could not complete setup. Please try again.' });
     } finally {
       setIsSubmitting(false);
     }

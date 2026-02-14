@@ -29,6 +29,8 @@ Sentry.init({
 
 
 
+import Toast from 'react-native-toast-message';
+
 SplashScreen.preventAutoHideAsync();
 
 function AppContent() {
@@ -79,6 +81,7 @@ function AppContent() {
             />
           </View>
         )}
+        <Toast />
       </View>
     </PaperProvider>
   );

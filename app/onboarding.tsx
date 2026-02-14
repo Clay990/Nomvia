@@ -10,7 +10,6 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  Alert,
   ActivityIndicator,
   Image
 } from "react-native";
@@ -19,6 +18,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { account, databases, storage, APPWRITE_DB_ID, APPWRITE_COLLECTION_USERS, APPWRITE_BUCKET_ID } from "../lib/appwrite";
 import { ID } from "react-native-appwrite";
 import { useAuth } from "../context/AuthContext";
+import Toast from 'react-native-toast-message';
 
 const STEPS = [
   { id: 'profile', title: 'Identity', icon: 'account-outline' },
@@ -96,7 +96,7 @@ export default function OnboardingScreen() {
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      if (!formData.role) return Alert.alert("Missing Info", "Please select a role.");
+      if (!formData.role) return Toast.show({ type: 'error', text1: 'Missing Info', text2: 'Please select a role.' });
       
       setIsSubmitting(true);
       try {
@@ -155,7 +155,7 @@ export default function OnboardingScreen() {
         await checkAuth();
       } catch (error: any) {
         console.error("Onboarding Error:", error);
-        Alert.alert("Error", "Could not save profile. Please try again.");
+        Toast.show({ type: 'error', text1: 'Error', text2: 'Could not save profile. Please try again.' });
       } finally {
         setIsSubmitting(false);
       }

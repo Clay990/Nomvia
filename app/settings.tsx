@@ -17,6 +17,7 @@ import { account } from "../lib/appwrite";
 import { useTheme } from "../context/ThemeContext";
 import { useRevenueCat } from "../context/RevenueCatContext";
 import { useAuth } from "../context/AuthContext";
+import Toast from 'react-native-toast-message';
 
 const ACCOUNT_CREATED = "January 2024"; 
 

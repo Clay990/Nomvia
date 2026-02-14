@@ -14,21 +14,19 @@ import {
 } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Snackbar } from 'react-native-paper';
 import { useTheme } from '../context/ThemeContext';
 import { CirclesService } from './services/circles';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import * as Clipboard from 'expo-clipboard';
+import Toast from 'react-native-toast-message';
 
 export default function CreateCircleScreen() {
     const router = useRouter();
     const { colors, isDark } = useTheme();
     const [activeTab, setActiveTab] = useState<'create' | 'join'>('create');
     const [loading, setLoading] = useState(false);
-    const [snackbarVisible, setSnackbarVisible] = useState(false);
-    const [snackbarMessage, setSnackbarMessage] = useState('');
 
     const [name, setName] = useState('');
     const [desc, setDesc] = useState('');
@@ -50,13 +48,13 @@ export default function CreateCircleScreen() {
                 Haptics.selectionAsync();
             }
         } catch (error) {
-            Alert.alert("Error", "Could not select image");
+            Toast.show({ type: 'error', text1: 'Error', text2: 'Could not select image' });
         }
     };
 
     const handleCreate = async () => {
         if (!name.trim()) {
-            Alert.alert("Missing Name", "Please give your circle a name.");
+            Toast.show({ type: 'error', text1: 'Missing Name', text2: 'Please give your circle a name.' });
             return;
         }
         setLoading(true);
@@ -85,7 +83,7 @@ export default function CreateCircleScreen() {
                 ]
             );
         } catch (error) {
-            Alert.alert("Error", "Could not create circle.");
+            Toast.show({ type: 'error', text1: 'Error', text2: 'Could not create circle.' });
         } finally {
             setLoading(false);
         }
@@ -97,8 +95,7 @@ export default function CreateCircleScreen() {
         try {
             await CirclesService.joinCircle(inviteCode);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            setSnackbarMessage("Successfully joined the circle!");
-            setSnackbarVisible(true);
+            Toast.show({ type: 'success', text1: 'Success', text2: 'Successfully joined the circle!' });
             setTimeout(() => {
                 router.back();
             }, 1500);
@@ -109,8 +106,7 @@ export default function CreateCircleScreen() {
             } else if (error.message === "Invalid invite code") {
                 msg = "Invalid invite code. Please check and try again.";
             }
-            setSnackbarMessage(msg);
-            setSnackbarVisible(true);
+            Toast.show({ type: 'error', text1: 'Error', text2: msg });
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         } finally {
             setLoading(false);
@@ -229,14 +225,6 @@ export default function CreateCircleScreen() {
                     </View>
                 )}
             </ScrollView>
-            <Snackbar
-                visible={snackbarVisible}
-                onDismiss={() => setSnackbarVisible(false)}
-                duration={3000}
-                style={{ backgroundColor: colors.text, marginBottom: 20 }}
-            >
-                <Text style={{ color: colors.background, fontWeight: '600' }}>{snackbarMessage}</Text>
-            </Snackbar>
         </KeyboardAvoidingView>
     );
 }
